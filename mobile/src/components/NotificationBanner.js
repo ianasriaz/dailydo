@@ -5,14 +5,18 @@ import { theme } from "../theme.js";
 export function NotificationBanner({ notification, onMarkDone, onDismiss }) {
   if (!notification) return null;
 
-  const catStyle = theme.categories[notification.category] || theme.categories["Personal & Errands"];
+  const catStyle = theme.categories[notification.category] || {
+    color: theme.colors.primary,
+    bg: theme.colors.primaryLight,
+    border: theme.colors.border
+  };
 
   return (
     <View style={styles.bannerContainer}>
       <View style={styles.bannerCard}>
         <View style={styles.topMeta}>
           <View style={styles.alertIndicator}>
-            <Text style={styles.bellIcon}>🔔</Text>
+            <View style={styles.alertPulseDot} />
             <Text style={styles.alertLabel}>TASK DUE NOW</Text>
           </View>
           <View style={[styles.catBadge, { backgroundColor: catStyle.bg, borderColor: catStyle.border }]}>
@@ -28,12 +32,16 @@ export function NotificationBanner({ notification, onMarkDone, onDismiss }) {
           <TouchableOpacity
             style={styles.doneBtn}
             onPress={() => onMarkDone(notification)}
-            activeOpacity={0.8}
+            activeOpacity={0.85}
           >
             <Text style={styles.doneBtnText}>✓ MARK AS DONE</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.dismissBtn} onPress={onDismiss} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.dismissBtn}
+            onPress={() => onDismiss()}
+            activeOpacity={0.7}
+          >
             <Text style={styles.dismissBtnText}>DISMISS</Text>
           </TouchableOpacity>
         </View>
@@ -52,15 +60,15 @@ const styles = StyleSheet.create({
   },
   bannerCard: {
     backgroundColor: theme.colors.surface,
-    borderWidth: 2,
-    borderColor: theme.colors.accent,
-    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: theme.colors.primary,
+    borderRadius: 16,
     padding: 16,
-    shadowColor: theme.colors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 20
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 12
   },
   topMeta: {
     flexDirection: "row",
@@ -72,43 +80,46 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center"
   },
-  bellIcon: {
-    fontSize: 14,
+  alertPulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.warning,
     marginRight: 6
   },
   alertLabel: {
     fontSize: 10,
     fontWeight: "900",
-    letterSpacing: 1,
-    color: theme.colors.accent
+    letterSpacing: 0.8,
+    color: theme.colors.warning
   },
   catBadge: {
     paddingVertical: 2,
     paddingHorizontal: 8,
-    borderRadius: 4,
+    borderRadius: 6,
     borderWidth: 1
   },
   catText: {
     fontSize: 9,
     fontWeight: "800",
-    letterSpacing: 0.5
+    letterSpacing: 0.3
   },
   taskTitle: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "800",
     color: theme.colors.textPrimary,
-    marginBottom: 14,
-    lineHeight: 22
+    marginBottom: 12,
+    lineHeight: 20
   },
   actionsRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10
+    gap: 8
   },
   doneBtn: {
     flex: 1,
-    backgroundColor: theme.colors.accent,
-    paddingVertical: 10,
+    backgroundColor: theme.colors.primary,
+    paddingVertical: 9,
     borderRadius: 8,
     alignItems: "center"
   },
@@ -116,19 +127,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 0.5,
-    color: theme.colors.accentText
+    color: "#FFFFFF"
   },
   dismissBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
+    paddingVertical: 9,
+    paddingHorizontal: 14,
     borderRadius: 8,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    alignItems: "center"
+    alignItems: "center",
+    backgroundColor: theme.colors.bg
   },
   dismissBtnText: {
     fontSize: 11,
     fontWeight: "700",
-    color: theme.colors.textMuted
+    color: theme.colors.textSecondary
   }
 });

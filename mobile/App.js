@@ -4,22 +4,38 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { theme } from "./src/theme.js";
 import { Header } from "./src/components/Header.js";
 import { Timeline } from "./src/components/Timeline.js";
-import { FloatingCaptureBar } from "./src/components/FloatingCaptureBar.js";
-import { CaptureOverlay } from "./src/components/CaptureOverlay.js";
+import { BottomNavBar } from "./src/components/BottomNavBar.js";
+import { AgentSearchPopup } from "./src/components/AgentSearchPopup.js";
+import { CategoriesScreen } from "./src/components/CategoriesScreen.js";
+import { CompletedScreen } from "./src/components/CompletedScreen.js";
+import { OverviewScreen } from "./src/components/OverviewScreen.js";
+import { CategoryPickerModal } from "./src/components/CategoryPickerModal.js";
 import { NotificationBanner } from "./src/components/NotificationBanner.js";
 import { api } from "./src/services/api.js";
 import { playChime } from "./src/utils/sound.js";
 
+const DEFAULT_CATEGORIES = [
+  "Work & Study",
+  "Routines & Habits",
+  "Personal & Errands",
+  "Health & Fitness",
+  "Finance"
+];
+
 export default function App() {
   const [tasks, setTasks] = useState([]);
-  const [captureVisible, setCaptureVisible] = useState(false);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [activeTab, setActiveTab] = useState("tasks"); // 'tasks' | 'categories' | 'completed' | 'overview'
+  const [categoryFilter, setCategoryFilter] = useState(null);
+
+  const [agentPopupVisible, setAgentPopupVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeNotification, setActiveNotification] = useState(null);
+  const [taskForCategoryChange, setTaskForCategoryChange] = useState(null);
 
-  // Set of task IDs that have already alerted during this session
   const alertedTaskIds = useRef(new Set());
 
-  // Load initial tasks
+  // Load initial tasks on boot
   useEffect(() => {
     loadTasks();
   }, []);
@@ -51,10 +67,12 @@ export default function App() {
           setActiveNotification(t);
           playChime();
 
-          // Update status in backend
+          // Update status in backend DynamoDB
           api.updateTaskStatus(t.taskId, "Reminded").then(() => {
-            setTasks(prev =>
-              prev.map(item => (item.taskId === t.taskId ? { ...item, status: "Reminded" } : item))
+            setTasks((prev) =>
+              prev.map((item) =>
+                item.taskId === t.taskId ? { ...item, status: "Reminded" } : item
+              )
             );
           });
           break;
@@ -65,37 +83,37 @@ export default function App() {
     return () => clearInterval(interval);
   }, [tasks]);
 
-  const handleOpenCapture = () => {
-    setCaptureVisible(true);
+  const handleOpenAgentPrompt = () => {
+    setAgentPopupVisible(true);
   };
 
-  const handleCloseCapture = () => {
-    setCaptureVisible(false);
+  const handleCloseAgentPrompt = () => {
+    setAgentPopupVisible(false);
   };
 
   const handleSubmitThought = async (rawText) => {
     setIsProcessing(true);
     try {
-      const result = await api.parseThoughts(rawText);
+      // Pass dynamic categories so Amazon Bedrock classifies into user's live taxonomy!
+      const result = await api.parseThoughts(rawText, categories);
       const newTasks = result.tasks || [];
 
-      // Append new tasks to local state
-      setTasks(prev => [...newTasks, ...prev]);
-      setCaptureVisible(false);
+      setTasks((prev) => [...newTasks, ...prev]);
+      setAgentPopupVisible(false);
+      setActiveTab("tasks"); // Switch to tasks screen to view newly created items
     } catch (err) {
       console.error("Thought parsing error:", err);
-      // Fallback local insertion if server call fails
       const fallbackTask = {
         taskId: "local-" + Date.now(),
         title: rawText,
-        category: "Personal & Errands",
+        category: categories[0] || "Personal & Errands",
         dueTime: null,
         isAnytime: true,
         status: "Pending",
         createdAt: new Date().toISOString()
       };
-      setTasks(prev => [fallbackTask, ...prev]);
-      setCaptureVisible(false);
+      setTasks((prev) => [fallbackTask, ...prev]);
+      setAgentPopupVisible(false);
     } finally {
       setIsProcessing(false);
     }
@@ -103,8 +121,8 @@ export default function App() {
 
   const handleToggleDone = async (task) => {
     const nextStatus = task.status === "Done" ? "Pending" : "Done";
-    setTasks(prev =>
-      prev.map(t => (t.taskId === task.taskId ? { ...t, status: nextStatus } : t))
+    setTasks((prev) =>
+      prev.map((t) => (t.taskId === task.taskId ? { ...t, status: nextStatus } : t))
     );
     if (activeNotification?.taskId === task.taskId && nextStatus === "Done") {
       setActiveNotification(null);
@@ -113,57 +131,126 @@ export default function App() {
   };
 
   const handleDelete = async (taskId) => {
-    setTasks(prev => prev.filter(t => t.taskId !== taskId));
+    setTasks((prev) => prev.filter((t) => t.taskId !== taskId));
     if (activeNotification?.taskId === taskId) {
       setActiveNotification(null);
     }
     await api.deleteTask(taskId);
   };
 
-  const handleDismissNotification = () => {
-    setActiveNotification(null);
+  // Re-categorization Flow
+  const handleOpenCategoryChange = (task) => {
+    setTaskForCategoryChange(task);
   };
 
-  const handleMarkNotificationDone = async (task) => {
-    await handleToggleDone(task);
-    setActiveNotification(null);
+  const handleSelectNewCategory = async (taskId, newCategory) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.taskId === taskId ? { ...t, category: newCategory } : t))
+    );
+    setTaskForCategoryChange(null);
+    await api.updateTask(taskId, { category: newCategory });
+  };
+
+  // Custom Category Addition
+  const handleAddCategory = (name, color) => {
+    if (!categories.includes(name)) {
+      setCategories((prev) => [...prev, name]);
+      theme.categories[name] = {
+        color: color || theme.colors.primary,
+        bg: color ? `${color}18` : theme.colors.primaryLight,
+        border: color ? `${color}40` : theme.colors.border
+      };
+    }
+  };
+
+  const handleFilterByCategory = (categoryName) => {
+    setCategoryFilter(categoryName);
+    setActiveTab("tasks");
   };
 
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="light-content" backgroundColor={theme.colors.bg} />
+        <StatusBar barStyle="dark-content" backgroundColor={theme.colors.surface} />
 
         <View style={styles.appContainer}>
           {activeNotification && (
             <NotificationBanner
               notification={activeNotification}
-              onMarkDone={handleMarkNotificationDone}
-              onDismiss={handleDismissNotification}
+              onMarkDone={async (t) => {
+                await handleToggleDone(t);
+                setActiveNotification(null);
+              }}
+              onDismiss={() => setActiveNotification(null)}
             />
           )}
 
+          {/* Top Brand Header */}
           <Header tasks={tasks} />
 
-          <Timeline
-            tasks={tasks}
-            onToggleDone={handleToggleDone}
-            onDelete={handleDelete}
-            onUseExample={(prompt) => {
-              handleSubmitThought(prompt);
+          {/* Tab Screen Routing */}
+          <View style={styles.contentArea}>
+            {activeTab === "tasks" && (
+              <Timeline
+                tasks={tasks}
+                onToggleDone={handleToggleDone}
+                onDelete={handleDelete}
+                onChangeCategory={handleOpenCategoryChange}
+                onUseExample={(prompt) => handleSubmitThought(prompt)}
+                categoryFilter={categoryFilter}
+                onClearCategoryFilter={() => setCategoryFilter(null)}
+              />
+            )}
+
+            {activeTab === "categories" && (
+              <CategoriesScreen
+                categories={categories}
+                tasks={tasks}
+                onAddCategory={handleAddCategory}
+                onSelectCategoryFilter={handleFilterByCategory}
+              />
+            )}
+
+            {activeTab === "completed" && (
+              <CompletedScreen
+                tasks={tasks}
+                onToggleDone={handleToggleDone}
+                onDelete={handleDelete}
+                onChangeCategory={handleOpenCategoryChange}
+              />
+            )}
+
+            {activeTab === "overview" && (
+              <OverviewScreen tasks={tasks} categories={categories} />
+            )}
+          </View>
+
+          {/* Elevated Commercial Bottom Nav Bar */}
+          <BottomNavBar
+            activeTab={activeTab}
+            onSelectTab={(tab) => {
+              setActiveTab(tab);
+              if (tab === "categories") setCategoryFilter(null);
             }}
+            onOpenAgentPrompt={handleOpenAgentPrompt}
           />
 
-          <FloatingCaptureBar
-            onOpenCapture={handleOpenCapture}
-            isProcessing={isProcessing}
-          />
-
-          <CaptureOverlay
-            visible={captureVisible}
-            onClose={handleCloseCapture}
+          {/* AI Search / Agent Chat Modal */}
+          <AgentSearchPopup
+            visible={agentPopupVisible}
+            onClose={handleCloseAgentPrompt}
             onSubmit={handleSubmitThought}
             isProcessing={isProcessing}
+            availableCategories={categories}
+          />
+
+          {/* Category Switcher Modal */}
+          <CategoryPickerModal
+            visible={Boolean(taskForCategoryChange)}
+            task={taskForCategoryChange}
+            categories={categories}
+            onSelectCategory={handleSelectNewCategory}
+            onClose={() => setTaskForCategoryChange(null)}
           />
         </View>
       </SafeAreaView>
@@ -174,18 +261,19 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: theme.colors.bg
+    backgroundColor: theme.colors.surface
   },
   appContainer: {
     flex: 1,
-    position: "relative",
     backgroundColor: theme.colors.bg,
-    // On web, center to modern mobile aspect ratio if wide screen
     maxWidth: Platform.OS === "web" ? 480 : "100%",
     width: "100%",
     alignSelf: "center",
     borderLeftWidth: Platform.OS === "web" ? 1 : 0,
     borderRightWidth: Platform.OS === "web" ? 1 : 0,
     borderColor: theme.colors.border
+  },
+  contentArea: {
+    flex: 1
   }
 });

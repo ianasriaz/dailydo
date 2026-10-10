@@ -1,34 +1,64 @@
+// Modern, launch-ready commercial theme inspired by premium health & productivity apps
+// Palette: Calm natural off-white, crisp card surfaces, deep forest slate, and refined muted tones.
 export const theme = {
   colors: {
-    bg: "#09090B",
-    surface: "#121216",
-    surfaceHover: "#181820",
-    border: "#272730",
-    borderFocused: "#3F3F46",
-    textPrimary: "#FFFFFF",
-    textSecondary: "#A1A1AA",
-    textMuted: "#71717A",
-    accent: "#CCFF00", // Electric Lime
-    accentHover: "#B3E600",
-    accentText: "#09090B",
-    danger: "#EF4444",
-    done: "#10B981"
+    bg: "#F4F6F4", // Soft calm natural off-white background
+    surface: "#FFFFFF", // Pure white elevated card surfaces
+    surfaceSubtle: "#EAEFEA", // Subtle rounded container background
+    surfaceHover: "#F8FAF8",
+    border: "#E2E8E4", // Light refined card border
+    borderFocused: "#0E382F", // Deep forest slate focus outline
+    borderLight: "#EEF2EE",
+    
+    // Typography
+    textPrimary: "#0E241E", // Deep forest slate heading & primary text
+    textSecondary: "#4A6158", // Medium neutral secondary text
+    textMuted: "#859A92", // Subtle metadata / placeholder text
+    
+    // Brand & Interactive Accents (Calm, mature, commercial - NO neon)
+    primary: "#0E382F", // Deep forest slate (centered button & active states)
+    primaryHover: "#164E42",
+    primaryLight: "#E5EFEA", // Active tab pill background
+    primaryText: "#FFFFFF",
+    
+    // Status colors
+    accent: "#0E382F",
+    accentLight: "#E8F2EC",
+    accentText: "#0E382F",
+    success: "#15803D",
+    successBg: "#DCFCE7",
+    danger: "#DC2626",
+    dangerBg: "#FEE2E2",
+    warning: "#D97706",
+    warningBg: "#FEF3C7"
   },
+  
+  // Default Category Palette (Soft, readable, production-grade)
   categories: {
     "Work & Study": {
-      color: "#38BDF8",
-      bg: "rgba(56, 189, 248, 0.12)",
-      border: "rgba(56, 189, 248, 0.3)"
+      color: "#0369A1",
+      bg: "#E0F2FE",
+      border: "#BAE6FD"
     },
     "Routines & Habits": {
-      color: "#A78BFA",
-      bg: "rgba(167, 139, 250, 0.12)",
-      border: "rgba(167, 139, 250, 0.3)"
+      color: "#0F766E",
+      bg: "#CCFBF1",
+      border: "#99F6E4"
     },
     "Personal & Errands": {
-      color: "#FBBF24",
-      bg: "rgba(251, 191, 36, 0.12)",
-      border: "rgba(251, 191, 36, 0.3)"
+      color: "#B45309",
+      bg: "#FEF3C7",
+      border: "#FDE68A"
+    },
+    "Health & Fitness": {
+      color: "#15803D",
+      bg: "#DCFCE7",
+      border: "#BBF7D0"
+    },
+    "Finance": {
+      color: "#4338CA",
+      bg: "#EEF2FF",
+      border: "#C7D2FE"
     }
   }
 };

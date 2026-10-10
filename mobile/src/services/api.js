@@ -32,13 +32,14 @@ export const api = {
     return await res.json();
   },
 
-  async parseThoughts(rawText) {
+  async parseThoughts(rawText, categories = []) {
     const res = await fetch(`${BASE_URL}/api/tasks/parse`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         rawText,
-        clientReferenceTime: new Date().toISOString()
+        clientReferenceTime: new Date().toISOString(),
+        categories
       })
     });
     if (!res.ok) {
@@ -48,18 +49,22 @@ export const api = {
     return await res.json();
   },
 
-  async updateTaskStatus(taskId, status) {
+  async updateTask(taskId, updates) {
     try {
       const res = await fetch(`${BASE_URL}/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status })
+        body: JSON.stringify(updates)
       });
       return await res.json();
     } catch (err) {
-      console.warn("API updateTaskStatus error:", err.message);
+      console.warn("API updateTask error:", err.message);
       return { success: false };
     }
+  },
+
+  async updateTaskStatus(taskId, status) {
+    return this.updateTask(taskId, { status });
   },
 
   async deleteTask(taskId) {

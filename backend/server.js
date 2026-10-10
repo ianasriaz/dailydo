@@ -4,7 +4,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
 import { parseTasksWithBedrock } from "./bedrock.js";
-import { initDynamoTable, getAllTasks, saveTask, updateTaskStatus, deleteTask } from "./dynamo.js";
+import { initDynamoTable, getAllTasks, saveTask, updateTask, updateTaskStatus, deleteTask } from "./dynamo.js";
 import { transcribeAudioBuffer } from "./transcribe.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -52,13 +52,13 @@ app.post("/api/speech/transcribe", async (req, res) => {
 // Parse natural language thoughts via Amazon Bedrock (Nova Micro)
 app.post("/api/tasks/parse", async (req, res) => {
   try {
-    const { rawText, clientReferenceTime } = req.body;
+    const { rawText, clientReferenceTime, categories } = req.body;
     if (!rawText || typeof rawText !== "string") {
       return res.status(400).json({ error: "rawText is required" });
     }
 
-    console.log(`[Bedrock Parse] Input: "${rawText}"`);
-    const { tasks: extractedList, source } = await parseTasksWithBedrock(rawText, clientReferenceTime);
+    console.log(`[Bedrock Parse] Input: "${rawText}" | Custom categories: ${categories ? categories.length : 'default'}`);
+    const { tasks: extractedList, source } = await parseTasksWithBedrock(rawText, clientReferenceTime, categories);
 
     const createdTasks = [];
     for (const item of extractedList) {
@@ -128,12 +128,12 @@ app.post("/api/tasks", async (req, res) => {
   }
 });
 
-// Update task status (Pending, Reminded, Done)
+// Update task (supports category, status, title, dueTime)
 app.patch("/api/tasks/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
-    const updated = await updateTaskStatus(id, status);
+    const updates = req.body;
+    const updated = await updateTask(id, updates);
     res.json({ success: true, task: updated });
   } catch (err) {
     console.error("Update task error:", err);

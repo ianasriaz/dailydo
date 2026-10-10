@@ -3,8 +3,8 @@ import { View, Text, StyleSheet } from "react-native";
 import { theme } from "../theme.js";
 
 export function Header({ tasks = [] }) {
-  const pendingCount = tasks.filter(t => t.status !== "Done").length;
-  const doneCount = tasks.filter(t => t.status === "Done").length;
+  const pendingCount = tasks.filter((t) => t.status !== "Done").length;
+  const doneCount = tasks.filter((t) => t.status === "Done").length;
 
   const today = new Date().toLocaleDateString("en-US", {
     weekday: "short",
@@ -24,7 +24,7 @@ export function Header({ tasks = [] }) {
       <View style={styles.statsRow}>
         <View style={styles.statPill}>
           <Text style={styles.statText}>
-            <Text style={styles.statHighlight}>{pendingCount}</Text> PENDING
+            <Text style={styles.statHighlight}>{pendingCount}</Text> ACTIVE
           </Text>
         </View>
         <View style={[styles.statPill, styles.statPillDone]}>
@@ -40,39 +40,39 @@ export function Header({ tasks = [] }) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 14,
     paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
-    backgroundColor: theme.colors.bg
+    backgroundColor: theme.colors.surface
   },
   topRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 10
+    marginBottom: 8
   },
   brandRow: {
     flexDirection: "row",
     alignItems: "center"
   },
   brandText: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "900",
-    letterSpacing: 2,
-    color: theme.colors.textPrimary
+    letterSpacing: 1.5,
+    color: theme.colors.primary
   },
   accentDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: theme.colors.accent,
+    backgroundColor: theme.colors.primary,
     marginLeft: 6
   },
   dateText: {
-    fontSize: 12,
-    fontWeight: "600",
-    letterSpacing: 1,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.8,
     color: theme.colors.textMuted
   },
   statsRow: {
@@ -80,26 +80,29 @@ const styles = StyleSheet.create({
     gap: 8
   },
   statPill: {
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    backgroundColor: theme.colors.surface,
+    paddingVertical: 3,
+    paddingHorizontal: 9,
+    backgroundColor: theme.colors.bg,
     borderRadius: 6,
     borderWidth: 1,
     borderColor: theme.colors.border
   },
   statPillDone: {
-    borderColor: "rgba(16, 185, 129, 0.2)"
+    backgroundColor: "#DCFCE7",
+    borderColor: "#BBF7D0"
   },
   statText: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "700",
     color: theme.colors.textSecondary,
     letterSpacing: 0.5
   },
   statHighlight: {
-    color: theme.colors.accent
+    color: theme.colors.primary,
+    fontWeight: "900"
   },
   statDoneHighlight: {
-    color: theme.colors.done
+    color: "#15803D",
+    fontWeight: "900"
   }
 });

@@ -82,33 +82,50 @@ export async function saveTask(task) {
   }
 }
 
-/**
- * Update task status (Pending, Reminded, Done)
- */
-export async function updateTaskStatus(taskId, status) {
+export async function updateTask(taskId, updates = {}) {
   if (!isDynamoAvailable) {
     const item = inMemoryFallbackTasks.find(t => t.taskId === taskId);
-    if (item) item.status = status;
+    if (item) Object.assign(item, updates);
     return item;
   }
+
+  const expressions = [];
+  const names = {};
+  const values = {};
+
+  Object.entries(updates).forEach(([key, val]) => {
+    expressions.push(`#${key} = :${key}`);
+    names[`#${key}`] = key;
+    values[`:${key}`] = val;
+  });
+
+  if (expressions.length === 0) return null;
+
   try {
     const res = await docClient.send(
       new UpdateCommand({
         TableName: TABLE_NAME,
         Key: { taskId },
-        UpdateExpression: "SET #st = :s",
-        ExpressionAttributeNames: { "#st": "status" },
-        ExpressionAttributeValues: { ":s": status },
+        UpdateExpression: "SET " + expressions.join(", "),
+        ExpressionAttributeNames: names,
+        ExpressionAttributeValues: values,
         ReturnValues: "ALL_NEW"
       })
     );
     return res.Attributes;
   } catch (err) {
-    console.warn("UpdateItem failed, updating in-memory:", err.message);
+    console.warn("UpdateTask failed, updating in-memory:", err.message);
     const item = inMemoryFallbackTasks.find(t => t.taskId === taskId);
-    if (item) item.status = status;
+    if (item) Object.assign(item, updates);
     return item;
   }
+}
+
+/**
+ * Update task status (Pending, Reminded, Done)
+ */
+export async function updateTaskStatus(taskId, status) {
+  return await updateTask(taskId, { status });
 }
 
 /**
