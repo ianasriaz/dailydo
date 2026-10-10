@@ -41,7 +41,7 @@ Build mode: fast
 
 ## Hands-on Checkpoints
 
-- [ ] Early usable behavior explored — Slice 1 (capture bar and live Bedrock extraction)
+- [x] Early usable behavior explored — Slice 1 (capture bar and live Bedrock extraction)
 - [ ] Final kick-the-tires exploration and feedback completed
 
 ## Final Review
@@ -63,4 +63,5 @@ Activity mode: [to be recorded upon completion]
 ## Revisions
 
 - Upgraded Expo to SDK 57 — discovered user's mobile device runs the latest Expo Go client (SDK 57) requiring upgraded package versions and LAN IP configuration (192.168.100.8) for seamless on-device testing.
+- Integrated native audio recording (expo-av) and AWS Transcribe backend service with minimalist CleanMicIcon vector component to replace emoji icons and provide real speech-to-text recording on mobile.
 

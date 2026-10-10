@@ -19,6 +19,19 @@ export const api = {
     }
   },
 
+  async transcribeAudio(audioBase64, format = "mp4") {
+    const res = await fetch(`${BASE_URL}/api/speech/transcribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ audioBase64, format })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || "Failed to transcribe audio");
+    }
+    return await res.json();
+  },
+
   async parseThoughts(rawText) {
     const res = await fetch(`${BASE_URL}/api/tasks/parse`, {
       method: "POST",

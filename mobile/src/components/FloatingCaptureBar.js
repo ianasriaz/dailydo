@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { CleanMicIcon } from "./CleanMicIcon.js";
 import { theme } from "../theme.js";
 
 export function FloatingCaptureBar({ onOpenCapture, isProcessing }) {
@@ -20,7 +21,7 @@ export function FloatingCaptureBar({ onOpenCapture, isProcessing }) {
             onPress={() => onOpenCapture(true)}
             activeOpacity={0.7}
           >
-            <Text style={styles.micIcon}>🎙</Text>
+            <CleanMicIcon size={16} color={theme.colors.accent} />
           </TouchableOpacity>
 
           <View style={styles.sendBtn}>
