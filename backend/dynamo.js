@@ -1,17 +1,22 @@
 import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from "@aws-sdk/client-dynamodb";
-import { DynamoDBDocumentClient, ScanCommand, PutCommand, UpdateCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
+import { DynamoDBDocumentClient, ScanCommand, PutCommand, UpdateCommand, DeleteCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
+import crypto from "crypto";
 
 const TABLE_NAME = "DailyDo_Tasks";
+const MEMORY_TABLE_NAME = "DailyDo_LearnedMemory";
+
 const rawClient = new DynamoDBClient({ region: "us-east-1" });
 const docClient = DynamoDBDocumentClient.from(rawClient);
 
 let isDynamoAvailable = true;
 let inMemoryFallbackTasks = [];
+let inMemoryLearnedCorrections = [];
 
 /**
- * Ensure DailyDo_Tasks table exists in AWS DynamoDB
+ * Ensure DailyDo_Tasks and DailyDo_LearnedMemory tables exist in AWS DynamoDB
  */
 export async function initDynamoTable() {
+  // 1. Initialize Tasks Table
   try {
     await rawClient.send(new DescribeTableCommand({ TableName: TABLE_NAME }));
     console.log(`DynamoDB table "${TABLE_NAME}" is active and ready.`);
@@ -39,6 +44,29 @@ export async function initDynamoTable() {
       isDynamoAvailable = false;
     }
   }
+
+  // 2. Initialize Learned Memory Table
+  try {
+    await rawClient.send(new DescribeTableCommand({ TableName: MEMORY_TABLE_NAME }));
+    console.log(`DynamoDB table "${MEMORY_TABLE_NAME}" is active and ready.`);
+  } catch (err) {
+    if (err.name === "ResourceNotFoundException") {
+      console.log(`Creating DynamoDB memory table "${MEMORY_TABLE_NAME}"...`);
+      try {
+        await rawClient.send(
+          new CreateTableCommand({
+            TableName: MEMORY_TABLE_NAME,
+            KeySchema: [{ AttributeName: "memoryId", KeyType: "HASH" }],
+            AttributeDefinitions: [{ AttributeName: "memoryId", AttributeType: "S" }],
+            BillingMode: "PAY_PER_REQUEST"
+          })
+        );
+        console.log(`Successfully requested creation of table "${MEMORY_TABLE_NAME}".`);
+      } catch (createErr) {
+        console.warn("Could not create memory table; using fallback in-memory store:", createErr.message);
+      }
+    }
+  }
 }
 
 /**
@@ -54,6 +82,27 @@ export async function getAllTasks() {
   } catch (err) {
     console.warn("Scan failed, returning in-memory:", err.message);
     return inMemoryFallbackTasks;
+  }
+}
+
+/**
+ * Get single task by taskId
+ */
+export async function getTaskById(taskId) {
+  if (!isDynamoAvailable) {
+    return inMemoryFallbackTasks.find(t => t.taskId === taskId) || null;
+  }
+  try {
+    const res = await docClient.send(
+      new GetCommand({
+        TableName: TABLE_NAME,
+        Key: { taskId }
+      })
+    );
+    return res.Item || null;
+  } catch (err) {
+    console.warn("GetItem failed:", err.message);
+    return inMemoryFallbackTasks.find(t => t.taskId === taskId) || null;
   }
 }
 
@@ -148,5 +197,59 @@ export async function deleteTask(taskId) {
     console.warn("DeleteItem failed, deleting from in-memory:", err.message);
     inMemoryFallbackTasks = inMemoryFallbackTasks.filter(t => t.taskId !== taskId);
     return { success: true };
+  }
+}
+
+/**
+ * Save user correction to learned memory
+ */
+export async function saveLearnedCorrection({ originalText, correctedTitle, correctedCategory }) {
+  const item = {
+    memoryId: crypto.randomUUID(),
+    originalText: String(originalText).trim(),
+    correctedTitle: String(correctedTitle || "").trim(),
+    correctedCategory: String(correctedCategory || "").trim(),
+    createdAt: new Date().toISOString()
+  };
+
+  if (!isDynamoAvailable) {
+    inMemoryLearnedCorrections = inMemoryLearnedCorrections.filter(
+      c => c.originalText.toLowerCase() !== item.originalText.toLowerCase()
+    );
+    inMemoryLearnedCorrections.unshift(item);
+    return item;
+  }
+
+  try {
+    await docClient.send(
+      new PutCommand({
+        TableName: MEMORY_TABLE_NAME,
+        Item: item
+      })
+    );
+    return item;
+  } catch (err) {
+    console.warn("SaveLearnedCorrection failed, using in-memory:", err.message);
+    inMemoryLearnedCorrections.unshift(item);
+    return item;
+  }
+}
+
+/**
+ * Retrieve recent user learned corrections
+ */
+export async function getLearnedCorrections(limit = 12) {
+  if (!isDynamoAvailable) {
+    return inMemoryLearnedCorrections.slice(0, limit);
+  }
+
+  try {
+    const res = await docClient.send(new ScanCommand({ TableName: MEMORY_TABLE_NAME }));
+    const items = res.Items || [];
+    items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return items.slice(0, limit);
+  } catch (err) {
+    console.warn("GetLearnedCorrections scan failed, using fallback:", err.message);
+    return inMemoryLearnedCorrections.slice(0, limit);
   }
 }

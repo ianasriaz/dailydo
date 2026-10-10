@@ -8,6 +8,7 @@ export function Timeline({
   onToggleDone,
   onDelete,
   onChangeCategory,
+  onEditTitle,
   categoryFilter,
   onClearCategoryFilter
 }) {
@@ -99,6 +100,7 @@ export function Timeline({
                       onToggleDone={onToggleDone}
                       onDelete={onDelete}
                       onChangeCategory={onChangeCategory}
+                      onEditTitle={onEditTitle}
                     />
                   ))}
                 </View>
@@ -119,6 +121,7 @@ export function Timeline({
                       onToggleDone={onToggleDone}
                       onDelete={onDelete}
                       onChangeCategory={onChangeCategory}
+                      onEditTitle={onEditTitle}
                     />
                   ))}
                 </View>
@@ -153,6 +156,7 @@ export function Timeline({
                   onToggleDone={onToggleDone}
                   onDelete={onDelete}
                   onChangeCategory={onChangeCategory}
+                  onEditTitle={onEditTitle}
                 />
               ))}
             </View>

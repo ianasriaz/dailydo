@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { theme } from "../theme.js";
 import { ClockIcon, CloseIcon, CheckIcon } from "./Icons.js";
 
-export function TaskCard({ task, onToggleDone, onDelete, onChangeCategory }) {
+export function TaskCard({ task, onToggleDone, onDelete, onChangeCategory, onEditTitle }) {
   const isDone = task.status === "Done";
   const isReminded = task.status === "Reminded";
   const catStyle = theme.categories[task.category] || {
@@ -35,9 +35,14 @@ export function TaskCard({ task, onToggleDone, onDelete, onChangeCategory }) {
 
       {/* Main Content */}
       <View style={styles.content}>
-        <Text style={[styles.title, isDone && styles.titleDone]} numberOfLines={2}>
-          {task.title}
-        </Text>
+        <TouchableOpacity
+          onPress={() => onEditTitle && onEditTitle(task)}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.title, isDone && styles.titleDone]} numberOfLines={2}>
+            {task.title}
+          </Text>
+        </TouchableOpacity>
 
         <View style={styles.metaRow}>
           {/* Clickable Category Pill */}

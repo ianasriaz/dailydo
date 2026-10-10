@@ -4,7 +4,16 @@ import path from "path";
 import { fileURLToPath } from "url";
 import crypto from "crypto";
 import { parseTasksWithBedrock } from "./bedrock.js";
-import { initDynamoTable, getAllTasks, saveTask, updateTask, updateTaskStatus, deleteTask } from "./dynamo.js";
+import {
+  initDynamoTable,
+  getAllTasks,
+  getTaskById,
+  saveTask,
+  updateTask,
+  deleteTask,
+  saveLearnedCorrection,
+  getLearnedCorrections
+} from "./dynamo.js";
 import { transcribeAudioBuffer } from "./transcribe.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -20,7 +29,7 @@ app.use(express.json({ limit: "50mb" }));
 const distPath = path.join(__dirname, "../mobile/dist");
 app.use(express.static(distPath));
 
-// Initialize AWS DynamoDB table on boot
+// Initialize AWS DynamoDB tables on boot
 initDynamoTable().catch(err => {
   console.warn("DynamoDB initialization warning:", err.message);
 });
@@ -49,16 +58,25 @@ app.post("/api/speech/transcribe", async (req, res) => {
   }
 });
 
-// Parse natural language thoughts via Amazon Bedrock (Nova Micro)
+// Parse natural language thoughts via Amazon Bedrock (with Adaptive Learned Memory)
 app.post("/api/tasks/parse", async (req, res) => {
   try {
-    const { rawText, clientReferenceTime, userLocalDate, userLocalTime, categories } = req.body;
+    const { rawText, userLocalDate, userLocalTime, categories } = req.body;
     if (!rawText || typeof rawText !== "string") {
       return res.status(400).json({ error: "rawText is required" });
     }
 
-    console.log(`[Bedrock Parse] Input: "${rawText}" | Local: ${userLocalDate} ${userLocalTime} | Custom categories: ${categories ? categories.length : 'default'}`);
-    const { tasks: extractedList, source } = await parseTasksWithBedrock(rawText, userLocalDate, userLocalTime, categories);
+    // Retrieve user's past learned corrections to feed into Bedrock
+    const learnedCorrections = await getLearnedCorrections(10);
+    console.log(`[Bedrock Parse] Input: "${rawText}" | Local: ${userLocalDate} ${userLocalTime} | Learned memories: ${learnedCorrections.length}`);
+
+    const { tasks: extractedList, source } = await parseTasksWithBedrock(
+      rawText,
+      userLocalDate,
+      userLocalTime,
+      categories,
+      learnedCorrections
+    );
 
     const createdTasks = [];
     for (const item of extractedList) {
@@ -91,7 +109,6 @@ app.post("/api/tasks/parse", async (req, res) => {
 app.get("/api/tasks", async (req, res) => {
   try {
     const tasks = await getAllTasks();
-    // Sort: timed tasks first by dueTime, then anytime tasks
     tasks.sort((a, b) => {
       if (a.dueTime && b.dueTime) {
         return new Date(a.dueTime) - new Date(b.dueTime);
@@ -128,15 +145,43 @@ app.post("/api/tasks", async (req, res) => {
   }
 });
 
-// Update task (supports category, status, title, dueTime)
+// Update task & Learn from corrections
 app.patch("/api/tasks/:id", async (req, res) => {
   try {
     const { id } = req.params;
     const updates = req.body;
+
+    const oldTask = await getTaskById(id);
     const updated = await updateTask(id, updates);
+
+    // Adaptive Learning Loop: Detect user edits and commit to memory
+    if (oldTask) {
+      const titleChanged = updates.title && updates.title !== oldTask.title;
+      const categoryChanged = updates.category && updates.category !== oldTask.category;
+
+      if (titleChanged || categoryChanged) {
+        await saveLearnedCorrection({
+          originalText: oldTask.title,
+          correctedTitle: updates.title || oldTask.title,
+          correctedCategory: updates.category || oldTask.category
+        });
+        console.log(`[Adaptive Learning] Learned correction from user edit: "${oldTask.title}" -> "${updates.title || oldTask.title}" (${updates.category || oldTask.category})`);
+      }
+    }
+
     res.json({ success: true, task: updated });
   } catch (err) {
     console.error("Update task error:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Get learned corrections
+app.get("/api/learn/memory", async (req, res) => {
+  try {
+    const memory = await getLearnedCorrections(20);
+    res.json({ success: true, memory });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });

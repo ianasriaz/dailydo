@@ -11,13 +11,14 @@ const DEFAULT_CATEGORIES = [
 ];
 
 /**
- * Fallback local parser when offline or in case of AWS connectivity issues
+ * Robust rule-based fallback when offline or in case of network interruption
  */
 function localRuleFallback(
   rawText,
   userLocalDate,
   userLocalTime,
-  categories = DEFAULT_CATEGORIES
+  categories = DEFAULT_CATEGORIES,
+  learnedCorrections = []
 ) {
   const parts = rawText
     .split(/[,;\n]|(?:\band\b)/i)
@@ -25,68 +26,44 @@ function localRuleFallback(
     .filter((p) => p.length > 2);
 
   return parts.map((part) => {
-    let category = categories.includes("Personal & Errands")
-      ? "Personal & Errands"
-      : categories[0];
-    const lower = part.toLowerCase();
+    let title = part
+      .replace(/^remind(?:\s+me)?(?:\s+for|\s+to|\s+about)?\s+/i, "")
+      .replace(/^need to\s+/i, "")
+      .replace(/^i have an?\s+/i, "")
+      .replace(/^don't forget to\s+/i, "")
+      .replace(/\s+at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?/i, "")
+      .replace(/\s+in\s+\d+\s+min(?:ute)?s?/i, "")
+      .trim();
 
-    // Check for routines / prayers (including voice typos like esha priya, zoor, etc.)
-    if (
-      lower.includes("pray") ||
-      lower.includes("namaz") ||
-      lower.includes("namas") ||
-      lower.includes("zuhr") ||
-      lower.includes("zoor") ||
-      lower.includes("zohar") ||
-      lower.includes("asr") ||
-      lower.includes("asor") ||
-      lower.includes("maghrib") ||
-      lower.includes("magrib") ||
-      lower.includes("isha") ||
-      lower.includes("esha") ||
-      lower.includes("fajr") ||
-      lower.includes("fajar") ||
-      lower.includes("meditat") ||
-      lower.includes("habit")
-    ) {
-      if (categories.includes("Routines & Habits")) category = "Routines & Habits";
-    } else if (
-      lower.includes("meeting") ||
-      lower.includes("sync") ||
-      lower.includes("call") ||
-      lower.includes("class") ||
-      lower.includes("assignment") ||
-      lower.includes("project") ||
-      lower.includes("exam") ||
-      lower.includes("work") ||
-      lower.includes("study")
-    ) {
-      if (categories.includes("Work & Study")) category = "Work & Study";
-    } else if (
-      lower.includes("gym") ||
-      lower.includes("workout") ||
-      lower.includes("run") ||
-      lower.includes("doctor") ||
-      lower.includes("medicine") ||
-      lower.includes("health")
-    ) {
-      if (categories.includes("Health & Fitness")) category = "Health & Fitness";
-    } else if (
-      lower.includes("pay") ||
-      lower.includes("bill") ||
-      lower.includes("invoice") ||
-      lower.includes("tax") ||
-      lower.includes("bank") ||
-      lower.includes("rent")
-    ) {
-      if (categories.includes("Finance")) category = "Finance";
+    let category = categories[0] || "Personal & Errands";
+
+    // 1. Check against learned memory first
+    const match = learnedCorrections.find(
+      (c) => c.originalText && part.toLowerCase().includes(c.originalText.toLowerCase())
+    );
+    if (match) {
+      if (match.correctedTitle) title = match.correctedTitle;
+      if (match.correctedCategory && categories.includes(match.correctedCategory)) {
+        category = match.correctedCategory;
+      }
+    } else {
+      const lower = part.toLowerCase();
+      if (lower.includes("meeting") || lower.includes("sync") || lower.includes("study") || lower.includes("class") || lower.includes("work")) {
+        if (categories.includes("Work & Study")) category = "Work & Study";
+      } else if (lower.includes("gym") || lower.includes("workout") || lower.includes("doctor") || lower.includes("health")) {
+        if (categories.includes("Health & Fitness")) category = "Health & Fitness";
+      } else if (lower.includes("pay") || lower.includes("bill") || lower.includes("bank") || lower.includes("rent")) {
+        if (categories.includes("Finance")) category = "Finance";
+      } else if (lower.includes("pray") || lower.includes("habit") || lower.includes("routine") || lower.includes("meditat")) {
+        if (categories.includes("Routines & Habits")) category = "Routines & Habits";
+      }
     }
 
     let dueTime = null;
     let isAnytime = true;
 
     // Check for "in X minute(s)"
-    const minMatch = lower.match(/in\s+(\d+)\s+min(?:ute)?s?/i);
+    const minMatch = part.match(/in\s+(\d+)\s+min(?:ute)?s?/i);
     if (minMatch && userLocalDate && userLocalTime) {
       const mins = parseInt(minMatch[1], 10);
       const [h, m] = userLocalTime.split(":").map(Number);
@@ -99,7 +76,7 @@ function localRuleFallback(
     }
 
     // Check for "at X:XX" or "at Xpm/am"
-    const timeMatch = lower.match(/at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+    const timeMatch = part.match(/at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
     if (timeMatch && !minMatch && userLocalDate) {
       let hours = parseInt(timeMatch[1], 10);
       const minutes = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
@@ -114,23 +91,6 @@ function localRuleFallback(
       isAnytime = false;
     }
 
-    // Clean title and fix phonetic errors
-    let title = part
-      .replace(/^remind(?:\s+me)?(?:\s+for|\s+to|\s+about)?\s+/i, "")
-      .replace(/^need to\s+/i, "")
-      .replace(/^i have an?\s+/i, "")
-      .replace(/^don't forget to\s+/i, "")
-      .replace(/\s+at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?/i, "")
-      .replace(/\s+in\s+\d+\s+min(?:ute)?s?/i, "")
-      .trim();
-
-    // Specific voice typo recovery
-    if (/e?sha\s+priya/i.test(title)) title = "Esha Prayer";
-    if (/zuhr|zoor|zohar/i.test(title)) title = "Zuhr Prayer";
-    if (/fajr|fajar/i.test(title)) title = "Fajr Prayer";
-    if (/asr|asor/i.test(title)) title = "Asr Prayer";
-    if (/maghrib|magrib/i.test(title)) title = "Maghrib Prayer";
-
     title = title.charAt(0).toUpperCase() + title.slice(1);
 
     return {
@@ -143,15 +103,19 @@ function localRuleFallback(
 }
 
 /**
- * Parse raw multi-intent thoughts with Amazon Bedrock (Nova Micro), dynamically
- * correcting voice speech-to-text typos, cleaning conversational filler,
- * and computing target deadlines in the user's local timezone.
+ * Intelligent task parsing using Amazon Bedrock (Nova Micro).
+ * Features:
+ * 1. Cognitive linguistic reasoning for voice dictation typos and phonetic sound-alikes.
+ * 2. Adaptive Memory Loop: Dynamically ingests user corrections from DynamoDB.
+ * 3. Generalized action titling without domain-specific hardcoding.
+ * 4. Deterministic local timezone calculation.
  */
 export async function parseTasksWithBedrock(
   rawText,
   userLocalDate,
   userLocalTime,
-  categories = DEFAULT_CATEGORIES
+  categories = DEFAULT_CATEGORIES,
+  learnedCorrections = []
 ) {
   const today = userLocalDate || new Date().toISOString().slice(0, 10);
   const currentTime = userLocalTime || new Date().toTimeString().slice(0, 5);
@@ -162,45 +126,44 @@ export async function parseTasksWithBedrock(
 
   const categoryOptionsFormatted = categoryList.map((c) => `  - "${c}"`).join("\n");
 
-  const systemPrompt = `You are an intelligent task parsing engine for DailyDo.
+  // Format learned user corrections (few-shot personalized memory)
+  let learnedContextBlock = "";
+  if (Array.isArray(learnedCorrections) && learnedCorrections.length > 0) {
+    const memoryLines = learnedCorrections.map((m) => {
+      return `  - User input: "${m.originalText}" -> Correct title: "${m.correctedTitle}"${m.correctedCategory ? ` (Category: "${m.correctedCategory}")` : ""}`;
+    });
+    learnedContextBlock = `\nUSER'S PERSONAL LEARNED VOCABULARY & PAST CORRECTIONS:
+The user has previously corrected or customized the following items. Prioritize and apply these learned patterns to understand their terminology, custom project names, routines, and category preferences:
+${memoryLines.join("\n")}\n`;
+  }
+
+  const systemPrompt = `You are the intelligent natural-language reasoning engine for DailyDo.
 User's Current Local Date: ${today}
 User's Current Local Time: ${currentTime}
 
 Available Categories:
 ${categoryOptionsFormatted}
-
-INTELLIGENCE & REASONING RULES:
-1. Speech-to-Text Phonetic & Typo Correction:
-   Raw user text frequently contains voice dictation phonetic mishearings and typos. You MUST intelligently infer the user's true intended action:
-   - "esha priya" -> "Esha Prayer" (Islamic prayer / evening routine)
-   - "zohar / zoor" -> "Zuhr Prayer"
-   - "fazer / fajar" -> "Fajr Prayer"
-   - "asor" -> "Asr Prayer"
-   - "namas" -> "Namaz"
-   - "sink with team / sync with tame" -> "Team Sync"
-   - "by grosseries / buy groceries" -> "Buy Groceries"
-   - "doc appointment" -> "Doctor Appointment"
-   Always reconstruct true human intent instead of verbatim speech-to-text errors.
+${learnedContextBlock}
+GENERAL REASONING & EXTRACTION PRINCIPLES:
+1. Speech Recognition & Phonetic Correction:
+   Voice dictation frequently mishears words, drops consonants, or transcribes phonetic approximations. You MUST intelligently deduce the intended action rather than keeping garbled text:
+   - Identify phonetic sound-alikes, cultural rituals, project names, and missing verbs.
+   - Example principle: If a phrase sounds like a known routine, daily prayer, medicine, or activity, reconstruct the authentic name.
+   - Example principle: If speech-to-text turns a verb into a noun or vice-versa, reconstruct the logical human intention.
 
 2. Clean Action-Oriented Titles:
-   - Strip out conversational filler: "remind me to", "remind for", "i need to", "don't forget to", "please set a reminder to", "schedule".
-   - Output concise, crisp action titles: "Esha Prayer", "Team Sync", "Buy Groceries", "Pay Electric Bill".
-   - NEVER output titles starting with "Reminder for...".
+   - Synthesize direct, title-cased action phrases: e.g. "Dentist Checkup", "Review Q3 Report", "Morning Cardio".
+   - Strip conversational noise: "remind me to", "remind for", "i need to", "don't forget to", "set reminder".
+   - NEVER output conversational prefixes like "Reminder for...".
 
-3. Accurate Local Time Calculation:
-   - "dueTime": Output the target deadline in the user's LOCAL time formatted as "YYYY-MM-DDTHH:mm:ss" without any 'Z' or timezone offset suffix.
-   - Example: If the user says "at 8 pm" and current local date is "${today}", output "${today}T20:00:00".
-   - Example: If user says "in 15 mins", add 15 minutes to current local time (${currentTime}) and output the resulting local timestamp.
-   - If no specific time or interval is specified, set "dueTime" to null and "isAnytime" to true.
+3. Deterministic Local Time Calculation:
+   - "dueTime": Output target local time formatted as "YYYY-MM-DDTHH:mm:ss" without any 'Z' or timezone offset.
+   - Relative intervals ("in 20 mins") are added to current local time (${currentTime}).
+   - Absolute times ("at 5 pm") use local date ${today} ("${today}T17:00:00").
+   - If no deadline or interval is stated, set "dueTime" to null and "isAnytime" to true.
 
-4. Semantic Categorization:
-   - Assign the single best category strictly from the Available Categories list:
-     - "Routines & Habits": Daily recurring rituals, Islamic prayers (Fajr, Zuhr, Asr, Maghrib, Isha/Esha), meditation, morning/night habits, hydration.
-     - "Work & Study": Professional team syncs, meetings, classes, exams, code reviews, presentations.
-     - "Health & Fitness": Gym, workouts, medication, sports, doctor visits.
-     - "Finance": Invoices, bill payments, bank, rent.
-     - "Personal & Errands": Household chores, groceries, repairs, shopping.
-     - Any custom categories: Match semantic intent accurately based on the category name.
+4. Semantic Taxonomy Mapping:
+   - Select the single most relevant category strictly from the Available Categories list based on the core intent of the task.
 
 Return ONLY a valid JSON array of objects:
 [{"title": "...", "category": "...", "dueTime": "YYYY-MM-DDTHH:mm:ss", "isAnytime": false}]`;
@@ -224,7 +187,6 @@ Return ONLY a valid JSON array of objects:
     const response = await client.send(command);
     const contentText = response.output?.message?.content?.[0]?.text || "";
 
-    // Clean any markdown backticks
     const cleaned = contentText
       .replace(/```json/gi, "")
       .replace(/```/g, "")
@@ -236,8 +198,8 @@ Return ONLY a valid JSON array of objects:
     }
     throw new Error("Invalid array returned from Bedrock");
   } catch (err) {
-    console.warn("Bedrock parsing failed or threw error; using robust local fallback:", err.message);
-    const fallbackTasks = localRuleFallback(rawText, today, currentTime, categoryList);
+    console.warn("Bedrock parsing fallback triggered:", err.message);
+    const fallbackTasks = localRuleFallback(rawText, today, currentTime, categoryList, learnedCorrections);
     return { tasks: fallbackTasks, source: "local-fallback" };
   }
 }

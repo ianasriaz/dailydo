@@ -8,6 +8,7 @@ import { BottomNavBar } from "./src/components/BottomNavBar.js";
 import { AgentSearchPopup } from "./src/components/AgentSearchPopup.js";
 import { CategoriesScreen } from "./src/components/CategoriesScreen.js";
 import { CategoryPickerModal } from "./src/components/CategoryPickerModal.js";
+import { EditTaskModal } from "./src/components/EditTaskModal.js";
 import { NotificationBanner } from "./src/components/NotificationBanner.js";
 import { api } from "./src/services/api.js";
 import { playChime } from "./src/utils/sound.js";
@@ -30,6 +31,7 @@ export default function App() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeNotification, setActiveNotification] = useState(null);
   const [taskForCategoryChange, setTaskForCategoryChange] = useState(null);
+  const [taskForTitleEdit, setTaskForTitleEdit] = useState(null);
 
   const alertedTaskIds = useRef(new Set());
 
@@ -104,17 +106,12 @@ export default function App() {
         .replace(/^remind(?:\s+me)?(?:\s+for|\s+to|\s+about)?\s+/i, "")
         .replace(/\s+at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?/i, "")
         .trim();
-      if (/e?sha\s+priya/i.test(cleanTitle)) cleanTitle = "Esha Prayer";
       cleanTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
-
-      const fallbackCat = /prayer|namaz|habit|meditat/i.test(cleanTitle) && categories.includes("Routines & Habits")
-        ? "Routines & Habits"
-        : (categories[0] || "Personal & Errands");
 
       const fallbackTask = {
         taskId: "local-" + Date.now(),
         title: cleanTitle || rawText,
-        category: fallbackCat,
+        category: categories[0] || "Personal & Errands",
         dueTime: null,
         isAnytime: true,
         status: "Pending",
@@ -146,7 +143,7 @@ export default function App() {
     await api.deleteTask(taskId);
   };
 
-  // Re-categorization Flow
+  // Re-categorization Flow (Automatically feeds into Adaptive Learning Loop)
   const handleOpenCategoryChange = (task) => {
     setTaskForCategoryChange(task);
   };
@@ -157,6 +154,19 @@ export default function App() {
     );
     setTaskForCategoryChange(null);
     await api.updateTask(taskId, { category: newCategory });
+  };
+
+  // Title Editing Flow (Automatically feeds into Adaptive Learning Loop)
+  const handleOpenTitleEdit = (task) => {
+    setTaskForTitleEdit(task);
+  };
+
+  const handleSaveTitleEdit = async (taskId, newTitle) => {
+    setTasks((prev) =>
+      prev.map((t) => (t.taskId === taskId ? { ...t, title: newTitle } : t))
+    );
+    setTaskForTitleEdit(null);
+    await api.updateTask(taskId, { title: newTitle });
   };
 
   // Custom Category Addition
@@ -204,6 +214,7 @@ export default function App() {
                 onToggleDone={handleToggleDone}
                 onDelete={handleDelete}
                 onChangeCategory={handleOpenCategoryChange}
+                onEditTitle={handleOpenTitleEdit}
                 categoryFilter={categoryFilter}
                 onClearCategoryFilter={() => setCategoryFilter(null)}
               />
@@ -244,6 +255,14 @@ export default function App() {
             categories={categories}
             onSelectCategory={handleSelectNewCategory}
             onClose={() => setTaskForCategoryChange(null)}
+          />
+
+          {/* Task Title Edit Modal (Adaptive Learning Loop) */}
+          <EditTaskModal
+            visible={Boolean(taskForTitleEdit)}
+            task={taskForTitleEdit}
+            onSave={handleSaveTitleEdit}
+            onClose={() => setTaskForTitleEdit(null)}
           />
         </View>
       </SafeAreaView>
