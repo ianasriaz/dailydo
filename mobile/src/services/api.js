@@ -33,12 +33,23 @@ export const api = {
   },
 
   async parseThoughts(rawText, categories = []) {
+    const now = new Date();
+    const localYear = now.getFullYear();
+    const localMonth = String(now.getMonth() + 1).padStart(2, "0");
+    const localDay = String(now.getDate()).padStart(2, "0");
+    const userLocalDate = `${localYear}-${localMonth}-${localDay}`;
+
+    const localHours = String(now.getHours()).padStart(2, "0");
+    const localMinutes = String(now.getMinutes()).padStart(2, "0");
+    const userLocalTime = `${localHours}:${localMinutes}`;
+
     const res = await fetch(`${BASE_URL}/api/tasks/parse`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         rawText,
-        clientReferenceTime: new Date().toISOString(),
+        userLocalDate,
+        userLocalTime,
         categories
       })
     });

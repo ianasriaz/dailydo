@@ -100,10 +100,21 @@ export default function App() {
       setActiveTab("tasks");
     } catch (err) {
       console.error("Thought parsing error:", err);
+      let cleanTitle = rawText
+        .replace(/^remind(?:\s+me)?(?:\s+for|\s+to|\s+about)?\s+/i, "")
+        .replace(/\s+at\s+\d{1,2}(?::\d{2})?\s*(?:am|pm)?/i, "")
+        .trim();
+      if (/e?sha\s+priya/i.test(cleanTitle)) cleanTitle = "Esha Prayer";
+      cleanTitle = cleanTitle.charAt(0).toUpperCase() + cleanTitle.slice(1);
+
+      const fallbackCat = /prayer|namaz|habit|meditat/i.test(cleanTitle) && categories.includes("Routines & Habits")
+        ? "Routines & Habits"
+        : (categories[0] || "Personal & Errands");
+
       const fallbackTask = {
         taskId: "local-" + Date.now(),
-        title: rawText,
-        category: categories[0] || "Personal & Errands",
+        title: cleanTitle || rawText,
+        category: fallbackCat,
         dueTime: null,
         isAnytime: true,
         status: "Pending",

@@ -52,13 +52,13 @@ app.post("/api/speech/transcribe", async (req, res) => {
 // Parse natural language thoughts via Amazon Bedrock (Nova Micro)
 app.post("/api/tasks/parse", async (req, res) => {
   try {
-    const { rawText, clientReferenceTime, categories } = req.body;
+    const { rawText, clientReferenceTime, userLocalDate, userLocalTime, categories } = req.body;
     if (!rawText || typeof rawText !== "string") {
       return res.status(400).json({ error: "rawText is required" });
     }
 
-    console.log(`[Bedrock Parse] Input: "${rawText}" | Custom categories: ${categories ? categories.length : 'default'}`);
-    const { tasks: extractedList, source } = await parseTasksWithBedrock(rawText, clientReferenceTime, categories);
+    console.log(`[Bedrock Parse] Input: "${rawText}" | Local: ${userLocalDate} ${userLocalTime} | Custom categories: ${categories ? categories.length : 'default'}`);
+    const { tasks: extractedList, source } = await parseTasksWithBedrock(rawText, userLocalDate, userLocalTime, categories);
 
     const createdTasks = [];
     for (const item of extractedList) {
