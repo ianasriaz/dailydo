@@ -1,14 +1,22 @@
 import express from "express";
 import cors from "cors";
-import crypto from "crypto";
+import path from "path";
+import { fileURLToPath } from "url";
 import { parseTasksWithBedrock } from "./bedrock.js";
 import { initDynamoTable, getAllTasks, saveTask, updateTaskStatus, deleteTask } from "./dynamo.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 app.use(cors());
 app.use(express.json());
+
+// Serve static compiled mobile app
+const distPath = path.join(__dirname, "../mobile/dist");
+app.use(express.static(distPath));
 
 // Initialize AWS DynamoDB table on boot
 initDynamoTable().catch(err => {
@@ -122,6 +130,12 @@ app.delete("/api/tasks/:id", async (req, res) => {
     console.error("Delete task error:", err);
     res.status(500).json({ error: err.message });
   }
+});
+
+// Catch-all route to serve mobile SPA
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api/")) return next();
+  res.sendFile(path.join(distPath, "index.html"));
 });
 
 app.listen(PORT, () => {

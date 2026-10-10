@@ -4,6 +4,7 @@ import { Platform } from "react-native";
 // On physical devices using Expo Go, change this or it automatically attempts local host.
 const BASE_URL = Platform.select({
   android: "http://10.0.2.2:4000",
+  web: "",
   default: "http://localhost:4000"
 });
 
