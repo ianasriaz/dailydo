@@ -63,5 +63,5 @@ Activity mode: [to be recorded upon completion]
 ## Revisions
 
 - Upgraded Expo to SDK 57 — discovered user's mobile device runs the latest Expo Go client (SDK 57) requiring upgraded package versions and LAN IP configuration (192.168.100.8) for seamless on-device testing.
-- Integrated native audio recording (expo-av) and AWS Transcribe backend service with minimalist CleanMicIcon vector component to replace emoji icons and provide real speech-to-text recording on mobile.
+- Upgraded to modern expo-audio and expo-file-system/legacy in Expo SDK 57 with AWS Transcribe integration using dedicated bucket dailydo-audio-855735869000. Replaced emoji icons with clean minimalist CleanMicIcon vector component. Handled microphone permission lifecycle and real-time recording timer UI.
 
