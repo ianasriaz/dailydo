@@ -9,48 +9,29 @@ import {
   Platform,
   StyleSheet
 } from "react-native";
-import { Audio } from "expo-av";
-import * as FileSystem from "expo-file-system";
 import { CleanMicIcon } from "./CleanMicIcon.js";
 import { theme } from "../theme.js";
-import { api } from "../services/api.js";
 
 export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, isProcessing }) {
   const [text, setText] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
-  const [recordSeconds, setRecordSeconds] = useState(0);
-  const [statusMessage, setStatusMessage] = useState("");
-
-  const recordingRef = useRef(null);
-  const timerRef = useRef(null);
+  const [isListening, setIsListening] = useState(false);
   const inputRef = useRef(null);
   const webRecognitionRef = useRef(null);
 
   useEffect(() => {
     if (visible) {
-      setStatusMessage("");
       if (initialVoiceMode) {
         startVoiceCapture();
       } else {
         setTimeout(() => inputRef.current?.focus(), 150);
       }
     } else {
-      stopVoiceCapture(false);
+      stopVoiceCapture();
     }
   }, [visible, initialVoiceMode]);
 
-  // Clean timer on unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, []);
-
-  const startVoiceCapture = async () => {
-    setStatusMessage("");
-
-    // Web Speech API on Web platform
+  const startVoiceCapture = () => {
+    // If on Web browser, use SpeechRecognition API
     if (Platform.OS === "web" && typeof window !== "undefined") {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognition) {
@@ -70,122 +51,37 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
             }
           };
 
-          rec.onerror = (e) => {
-            console.warn("Web speech error:", e);
-            setIsRecording(false);
-          };
-
-          rec.onend = () => {
-            setIsRecording(false);
-          };
+          rec.onerror = () => setIsListening(false);
+          rec.onend = () => setIsListening(false);
 
           rec.start();
           webRecognitionRef.current = rec;
-          setIsRecording(true);
+          setIsListening(true);
           return;
         } catch (err) {
-          console.warn("Web speech init failed:", err);
+          console.warn("Web speech error:", err);
         }
       }
     }
 
-    // Native Mobile audio recording with expo-av
-    try {
-      const permission = await Audio.requestPermissionsAsync();
-      if (!permission.granted) {
-        setStatusMessage("Microphone permission denied. Please allow audio access.");
-        inputRef.current?.focus();
-        return;
-      }
-
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true
-      });
-
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-
-      recordingRef.current = recording;
-      setIsRecording(true);
-      setRecordSeconds(0);
-
-      // Start elapsed seconds counter
-      if (timerRef.current) clearInterval(timerRef.current);
-      timerRef.current = setInterval(() => {
-        setRecordSeconds(prev => prev + 1);
-      }, 1000);
-    } catch (err) {
-      console.warn("Failed to start native audio recording:", err);
-      setStatusMessage("Could not start recording. You can type or use quick chips.");
-      inputRef.current?.focus();
-    }
+    // On mobile devices, activate listening state and focus input for voice dictation
+    setIsListening(true);
+    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
-  const stopVoiceCapture = async (shouldTranscribe = true) => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-
-    // Stop web recognition if running
+  const stopVoiceCapture = () => {
     if (webRecognitionRef.current) {
       try {
         webRecognitionRef.current.stop();
       } catch {}
       webRecognitionRef.current = null;
     }
-
-    // Stop native recording
-    const rec = recordingRef.current;
-    if (rec) {
-      try {
-        await rec.stopAndUnloadAsync();
-        const uri = rec.getURI();
-        recordingRef.current = null;
-        setIsRecording(false);
-
-        if (shouldTranscribe && uri) {
-          await transcribeRecordedAudio(uri);
-        }
-      } catch (err) {
-        console.warn("Error stopping native recording:", err);
-        setIsRecording(false);
-      }
-    } else {
-      setIsRecording(false);
-    }
+    setIsListening(false);
   };
 
-  const transcribeRecordedAudio = async (uri) => {
-    setIsTranscribing(true);
-    setStatusMessage("Transcribing audio with AWS...");
-    try {
-      // Read base64
-      const base64Data = await FileSystem.readAsStringAsync(uri, {
-        encoding: FileSystem.EncodingType.Base64
-      });
-
-      const result = await api.transcribeAudio(base64Data, "mp4");
-      if (result.text && result.text.trim()) {
-        const spoken = result.text.trim();
-        setText(prev => (prev ? prev + " " + spoken : spoken));
-        setStatusMessage("");
-      } else {
-        setStatusMessage("No speech detected. Please speak clearly or type.");
-      }
-    } catch (err) {
-      console.warn("Transcribe failed:", err);
-      setStatusMessage("Cloud transcription unavailable. You can type or use suggestions.");
-    } finally {
-      setIsTranscribing(false);
-    }
-  };
-
-  const handleMicPress = () => {
-    if (isRecording) {
-      stopVoiceCapture(true);
+  const handleMicToggle = () => {
+    if (isListening) {
+      stopVoiceCapture();
     } else {
       startVoiceCapture();
     }
@@ -193,10 +89,9 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
 
   const handleSubmit = () => {
     if (!text.trim() || isProcessing) return;
-    stopVoiceCapture(false);
+    stopVoiceCapture();
     onSubmit(text.trim());
     setText("");
-    setStatusMessage("");
   };
 
   const handleChipClick = (snippet) => {
@@ -211,7 +106,7 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
             <View style={styles.titleBox}>
               <Text style={styles.headerTitle}>QUICK CAPTURE</Text>
               <Text style={styles.headerSubtitle}>
-                Speak or type natural thoughts — AWS Bedrock will organize them.
+                Speak or type freeform thoughts — AWS Bedrock will organize them.
               </Text>
             </View>
             <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.7}>
@@ -219,32 +114,20 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
             </TouchableOpacity>
           </View>
 
-          {/* Clean Minimal Recording / Transcribing Indicator */}
-          {isRecording && (
-            <View style={styles.recordingBanner}>
+          {isListening && (
+            <View style={styles.listeningBadge}>
               <View style={styles.pulseDot} />
-              <Text style={styles.recordingText}>
-                RECORDING AUDIO ({recordSeconds}s) — TAP MIC TO TRANSCRIBE
+              <Text style={styles.listeningText}>
+                VOICE CAPTURE ACTIVE — SPEAK OR TYPE FREELY
               </Text>
             </View>
-          )}
-
-          {isTranscribing && (
-            <View style={styles.transcribingBanner}>
-              <ActivityIndicator size="small" color={theme.colors.accent} style={{ marginRight: 8 }} />
-              <Text style={styles.transcribingText}>TRANSCRIBING WITH AWS...</Text>
-            </View>
-          )}
-
-          {Boolean(statusMessage) && !isRecording && !isTranscribing && (
-            <Text style={styles.statusMessage}>{statusMessage}</Text>
           )}
 
           <TextInput
             ref={inputRef}
             style={styles.textInput}
             multiline
-            placeholder="Speak or type: e.g., Team sync in 1 minute, review lecture slides at 4pm, pick up groceries"
+            placeholder="e.g., Team sync in 1 minute, review lecture slides at 4pm, pick up groceries"
             placeholderTextColor={theme.colors.textMuted}
             value={text}
             onChangeText={setText}
@@ -266,14 +149,14 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
 
           <View style={styles.footerRow}>
             <TouchableOpacity
-              style={[styles.micToggle, isRecording && styles.micToggleRecording]}
-              onPress={handleMicPress}
+              style={[styles.micToggle, isListening && styles.micToggleActive]}
+              onPress={handleMicToggle}
               activeOpacity={0.8}
             >
               <CleanMicIcon
                 size={18}
-                color={isRecording ? theme.colors.danger : theme.colors.accent}
-                active={isRecording}
+                color={isListening ? theme.colors.accent : theme.colors.textSecondary}
+                active={isListening}
               />
             </TouchableOpacity>
 
@@ -341,35 +224,10 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontWeight: "700"
   },
-  recordingBanner: {
+  listeningBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(239, 68, 68, 0.12)",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: theme.colors.danger,
-    marginBottom: 12,
-    alignSelf: "flex-start"
-  },
-  pulseDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: theme.colors.danger,
-    marginRight: 8
-  },
-  recordingText: {
-    fontSize: 10,
-    fontWeight: "900",
-    letterSpacing: 1,
-    color: theme.colors.danger
-  },
-  transcribingBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(204, 255, 0, 0.1)",
+    backgroundColor: "rgba(204, 255, 0, 0.12)",
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 6,
@@ -378,17 +236,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     alignSelf: "flex-start"
   },
-  transcribingText: {
+  pulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.accent,
+    marginRight: 8
+  },
+  listeningText: {
     fontSize: 10,
     fontWeight: "900",
     letterSpacing: 1,
     color: theme.colors.accent
-  },
-  statusMessage: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
-    marginBottom: 10,
-    fontStyle: "italic"
   },
   textInput: {
     backgroundColor: theme.colors.bg,
@@ -439,13 +298,13 @@ const styles = StyleSheet.create({
     borderRadius: 23,
     backgroundColor: theme.colors.bg,
     borderWidth: 1,
-    borderColor: theme.colors.accent,
+    borderColor: theme.colors.border,
     justifyContent: "center",
     alignItems: "center"
   },
-  micToggleRecording: {
-    borderColor: theme.colors.danger,
-    backgroundColor: "rgba(239, 68, 68, 0.15)"
+  micToggleActive: {
+    borderColor: theme.colors.accent,
+    backgroundColor: "rgba(204, 255, 0, 0.15)"
   },
   submitBtn: {
     flex: 1,

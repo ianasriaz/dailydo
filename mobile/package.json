@@ -12,7 +12,6 @@
     "@expo/metro-runtime": "*",
     "expo": "~57.0.27",
     "expo-asset": "~57.0.19",
-    "expo-av": "^16.0.8",
     "expo-file-system": "~57.0.7",
     "expo-status-bar": "~57.0.1",
     "react": "19.2.3",
