@@ -15,22 +15,31 @@ export async function transcribeAudioBuffer(buffer, mediaFormat = "mp4") {
   const jobId = `dailydo-voice-${Date.now()}-${crypto.randomBytes(4).toString("hex")}`;
   const s3Key = `voice-uploads/${jobId}.${mediaFormat}`;
 
+  const fmt = (mediaFormat || "m4a").toLowerCase().replace(".", "");
+  const validFormats = ["mp3", "mp4", "wav", "flac", "ogg", "amr", "webm", "m4a"];
+  const finalFormat = validFormats.includes(fmt) ? fmt : "m4a";
+
+  let contentType = "audio/mp4";
+  if (finalFormat === "wav") contentType = "audio/wav";
+  else if (finalFormat === "mp3") contentType = "audio/mpeg";
+  else if (finalFormat === "webm") contentType = "audio/webm";
+
   try {
     console.log(`[AWS Transcribe] Uploading audio to s3://${S3_BUCKET}/${s3Key}...`);
     await s3.send(new PutObjectCommand({
       Bucket: S3_BUCKET,
       Key: s3Key,
       Body: buffer,
-      ContentType: mediaFormat === "wav" ? "audio/wav" : "audio/mp4"
+      ContentType: contentType
     }));
 
     const mediaUri = `s3://${S3_BUCKET}/${s3Key}`;
-    console.log(`[AWS Transcribe] Starting transcription job: ${jobId}...`);
+    console.log(`[AWS Transcribe] Starting transcription job: ${jobId} (format: ${finalFormat})...`);
 
     await transcribe.send(new StartTranscriptionJobCommand({
       TranscriptionJobName: jobId,
       LanguageCode: "en-US",
-      MediaFormat: mediaFormat === "wav" ? "wav" : "mp4",
+      MediaFormat: finalFormat,
       Media: { MediaFileUri: mediaUri }
     }));
 

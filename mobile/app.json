@@ -9,8 +9,22 @@
     "splash": {
       "backgroundColor": "#09090B"
     },
+    "ios": {
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "DailyDo needs microphone access so you can speak to capture your daily tasks."
+      }
+    },
+    "android": {
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
+    },
     "web": {
       "bundler": "metro"
-    }
+    },
+    "plugins": [
+      "expo-audio"
+    ]
   }
 }
