@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { TaskCard } from "./TaskCard.js";
 import { theme } from "../theme.js";
@@ -11,13 +11,17 @@ export function Timeline({
   categoryFilter,
   onClearCategoryFilter
 }) {
+  const [viewMode, setViewMode] = useState("active"); // 'active' | 'completed'
+
   const filteredTasks = categoryFilter
     ? tasks.filter((t) => t.category === categoryFilter)
     : tasks;
 
-  const timedTasks = filteredTasks.filter((t) => !t.isAnytime && t.dueTime);
-  const anytimeTasks = filteredTasks.filter((t) => t.isAnytime || !t.dueTime);
-  const isEmpty = filteredTasks.length === 0;
+  const activeTasks = filteredTasks.filter((t) => t.status !== "Done");
+  const completedTasks = filteredTasks.filter((t) => t.status === "Done");
+
+  const timedActiveTasks = activeTasks.filter((t) => !t.isAnytime && t.dueTime);
+  const anytimeActiveTasks = activeTasks.filter((t) => t.isAnytime || !t.dueTime);
 
   return (
     <ScrollView
@@ -41,48 +45,108 @@ export function Timeline({
         </View>
       )}
 
-      {isEmpty ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>
-            {categoryFilter ? `No tasks in ${categoryFilter}` : "No Active Tasks"}
+      {/* Segmented Control: Scheduled vs Completed */}
+      <View style={styles.segmentContainer}>
+        <TouchableOpacity
+          style={[styles.segmentTab, viewMode === "active" && styles.segmentTabActive]}
+          onPress={() => setViewMode("active")}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.segmentLabel, viewMode === "active" && styles.segmentLabelActive]}>
+            Scheduled ({activeTasks.length})
           </Text>
-          <Text style={styles.emptySubtitle}>
-            {categoryFilter
-              ? "Switch category filter or tap + to add a new task."
-              : "Tap the + button below to add a reminder or schedule."}
-          </Text>
-        </View>
-      ) : (
-        <>
-          {timedTasks.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>SCHEDULED</Text>
-                <View style={styles.badgeCount}>
-                  <Text style={styles.badgeCountText}>{timedTasks.length}</Text>
-                </View>
-              </View>
-              {timedTasks.map((task) => (
-                <TaskCard
-                  key={task.taskId}
-                  task={task}
-                  onToggleDone={onToggleDone}
-                  onDelete={onDelete}
-                  onChangeCategory={onChangeCategory}
-                />
-              ))}
-            </View>
-          )}
+        </TouchableOpacity>
 
-          {anytimeTasks.length > 0 && (
+        <TouchableOpacity
+          style={[styles.segmentTab, viewMode === "completed" && styles.segmentTabActive]}
+          onPress={() => setViewMode("completed")}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.segmentLabel, viewMode === "completed" && styles.segmentLabelActive]}>
+            Completed ({completedTasks.length})
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* ACTIVE TASKS VIEW */}
+      {viewMode === "active" && (
+        <>
+          {activeTasks.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>
+                {categoryFilter ? `No tasks in ${categoryFilter}` : "No Active Tasks"}
+              </Text>
+              <Text style={styles.emptySubtitle}>
+                {categoryFilter
+                  ? "Clear the category filter or tap + to add a task."
+                  : "Tap the + button below to add a reminder or schedule."}
+              </Text>
+            </View>
+          ) : (
+            <>
+              {timedActiveTasks.length > 0 && (
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>TIMED</Text>
+                    <View style={styles.badgeCount}>
+                      <Text style={styles.badgeCountText}>{timedActiveTasks.length}</Text>
+                    </View>
+                  </View>
+                  {timedActiveTasks.map((task) => (
+                    <TaskCard
+                      key={task.taskId}
+                      task={task}
+                      onToggleDone={onToggleDone}
+                      onDelete={onDelete}
+                      onChangeCategory={onChangeCategory}
+                    />
+                  ))}
+                </View>
+              )}
+
+              {anytimeActiveTasks.length > 0 && (
+                <View style={styles.section}>
+                  <View style={styles.sectionHeader}>
+                    <Text style={styles.sectionTitle}>ANYTIME</Text>
+                    <View style={styles.badgeCount}>
+                      <Text style={styles.badgeCountText}>{anytimeActiveTasks.length}</Text>
+                    </View>
+                  </View>
+                  {anytimeActiveTasks.map((task) => (
+                    <TaskCard
+                      key={task.taskId}
+                      task={task}
+                      onToggleDone={onToggleDone}
+                      onDelete={onDelete}
+                      onChangeCategory={onChangeCategory}
+                    />
+                  ))}
+                </View>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* COMPLETED TASKS VIEW */}
+      {viewMode === "completed" && (
+        <>
+          {completedTasks.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyTitle}>No Completed Tasks</Text>
+              <Text style={styles.emptySubtitle}>
+                Completed reminders and accomplished tasks will appear here.
+              </Text>
+            </View>
+          ) : (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>ANYTIME</Text>
+                <Text style={styles.sectionTitle}>ACCOMPLISHED</Text>
                 <View style={styles.badgeCount}>
-                  <Text style={styles.badgeCountText}>{anytimeTasks.length}</Text>
+                  <Text style={styles.badgeCountText}>{completedTasks.length}</Text>
                 </View>
               </View>
-              {anytimeTasks.map((task) => (
+              {completedTasks.map((task) => (
                 <TaskCard
                   key={task.taskId}
                   task={task}
@@ -140,6 +204,38 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: theme.colors.primary
   },
+  segmentContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E4EDE7",
+    borderRadius: 14,
+    padding: 3,
+    marginBottom: 16
+  },
+  segmentTab: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 11,
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  segmentTabActive: {
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2
+  },
+  segmentLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#6B857B"
+  },
+  segmentLabelActive: {
+    fontWeight: "800",
+    color: theme.colors.primary
+  },
   section: {
     marginBottom: 16
   },
@@ -171,7 +267,7 @@ const styles = StyleSheet.create({
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 80,
+    paddingVertical: 70,
     paddingHorizontal: 24
   },
   emptyTitle: {

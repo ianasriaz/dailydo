@@ -7,8 +7,6 @@ import { Timeline } from "./src/components/Timeline.js";
 import { BottomNavBar } from "./src/components/BottomNavBar.js";
 import { AgentSearchPopup } from "./src/components/AgentSearchPopup.js";
 import { CategoriesScreen } from "./src/components/CategoriesScreen.js";
-import { CompletedScreen } from "./src/components/CompletedScreen.js";
-import { OverviewScreen } from "./src/components/OverviewScreen.js";
 import { CategoryPickerModal } from "./src/components/CategoryPickerModal.js";
 import { NotificationBanner } from "./src/components/NotificationBanner.js";
 import { api } from "./src/services/api.js";
@@ -25,7 +23,7 @@ const DEFAULT_CATEGORIES = [
 export default function App() {
   const [tasks, setTasks] = useState([]);
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
-  const [activeTab, setActiveTab] = useState("tasks"); // 'tasks' | 'categories' | 'completed' | 'overview'
+  const [activeTab, setActiveTab] = useState("tasks"); // 'tasks' | 'categories'
   const [categoryFilter, setCategoryFilter] = useState(null);
 
   const [agentPopupVisible, setAgentPopupVisible] = useState(false);
@@ -184,10 +182,10 @@ export default function App() {
             />
           )}
 
-          {/* Top Brand & Screen Header */}
+          {/* Top Header */}
           <Header activeTab={activeTab} />
 
-          {/* Screen Content Area */}
+          {/* Main Content Area */}
           <View style={styles.contentArea}>
             {activeTab === "tasks" && (
               <Timeline
@@ -208,22 +206,9 @@ export default function App() {
                 onSelectCategoryFilter={handleFilterByCategory}
               />
             )}
-
-            {activeTab === "completed" && (
-              <CompletedScreen
-                tasks={tasks}
-                onToggleDone={handleToggleDone}
-                onDelete={handleDelete}
-                onChangeCategory={handleOpenCategoryChange}
-              />
-            )}
-
-            {activeTab === "overview" && (
-              <OverviewScreen tasks={tasks} />
-            )}
           </View>
 
-          {/* Elevated Bottom Nav Dock */}
+          {/* Balanced 3-Item Bottom Navigation Dock */}
           <BottomNavBar
             activeTab={activeTab}
             onSelectTab={(tab) => {

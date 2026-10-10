@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { theme } from "../theme.js";
-import { ClockIcon, CloseIcon } from "./Icons.js";
+import { ClockIcon, CloseIcon, CheckIcon } from "./Icons.js";
 
 export function TaskCard({ task, onToggleDone, onDelete, onChangeCategory }) {
   const isDone = task.status === "Done";
@@ -30,7 +30,7 @@ export function TaskCard({ task, onToggleDone, onDelete, onChangeCategory }) {
         onPress={() => onToggleDone(task)}
         activeOpacity={0.7}
       >
-        {isDone && <View style={styles.checkInner} />}
+        {isDone && <CheckIcon color="#FFFFFF" size={13} />}
       </TouchableOpacity>
 
       {/* Main Content */}
@@ -105,9 +105,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEFCE8"
   },
   checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     borderWidth: 2,
     borderColor: "#A9BCB4",
     justifyContent: "center",
@@ -117,12 +117,6 @@ const styles = StyleSheet.create({
   checkboxDone: {
     backgroundColor: theme.colors.primary,
     borderColor: theme.colors.primary
-  },
-  checkInner: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#FFFFFF"
   },
   content: {
     flex: 1

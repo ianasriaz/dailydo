@@ -9,7 +9,7 @@ export function TasksTabIcon({ color = "#0E382F", size = 20 }) {
         y="4"
         width="18"
         height="17"
-        rx="3"
+        rx="3.5"
         stroke={color}
         strokeWidth="1.8"
       />
@@ -38,38 +38,13 @@ export function CategoriesTabIcon({ color = "#0E382F", size = 20 }) {
   );
 }
 
-export function CompletedTabIcon({ color = "#0E382F", size = 20 }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle cx="12" cy="12" r="9" stroke={color} strokeWidth="1.8" />
-      <Path
-        d="M8 12.2L10.8 15L16.2 9.5"
-        stroke={color}
-        strokeWidth="1.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </Svg>
-  );
-}
-
-export function InsightsTabIcon({ color = "#0E382F", size = 20 }) {
-  return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Rect x="4" y="13" width="3.5" height="7" rx="1.5" stroke={color} strokeWidth="1.8" />
-      <Rect x="10.25" y="7" width="3.5" height="13" rx="1.5" stroke={color} strokeWidth="1.8" />
-      <Rect x="16.5" y="4" width="3.5" height="16" rx="1.5" stroke={color} strokeWidth="1.8" />
-    </Svg>
-  );
-}
-
 export function CenterPlusIcon({ color = "#FFFFFF", size = 22 }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
       <Path
         d="M12 5V19M5 12H19"
         stroke={color}
-        strokeWidth="2.4"
+        strokeWidth="2.5"
         strokeLinecap="round"
       />
     </Svg>
@@ -93,6 +68,20 @@ export function CloseIcon({ color = "#7C9289", size = 16 }) {
         stroke={color}
         strokeWidth="2"
         strokeLinecap="round"
+      />
+    </Svg>
+  );
+}
+
+export function CheckIcon({ color = "#FFFFFF", size = 12 }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <Path
+        d="M4.5 12.5L9.5 17.5L19.5 7.5"
+        stroke={color}
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
       />
     </Svg>
   );
