@@ -9,6 +9,7 @@ import {
   StyleSheet
 } from "react-native";
 import { theme } from "../theme.js";
+import { CloseIcon } from "./Icons.js";
 
 export function CategoriesScreen({
   categories,
@@ -39,70 +40,50 @@ export function CategoriesScreen({
 
   return (
     <View style={styles.container}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>CATEGORIES</Text>
-          <Text style={styles.subtitle}>
-            Tasks are organized automatically into your categories.
-          </Text>
-        </View>
-
+      {/* Top Action Bar */}
+      <View style={styles.topBar}>
+        <Text style={styles.sectionLabel}>YOUR CATEGORIES</Text>
         <TouchableOpacity
-          style={styles.addCategoryBtn}
+          style={styles.addBtn}
           onPress={() => setModalVisible(true)}
           activeOpacity={0.8}
         >
-          <Text style={styles.addCategoryBtnText}>+ NEW</Text>
+          <Text style={styles.addBtnText}>+ Add Category</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Categories Grid */}
+      {/* Categories List */}
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.grid}>
+        <View style={styles.list}>
           {categories.map((catName) => {
             const catStyle = theme.categories[catName] || {
               color: theme.colors.primary,
-              bg: theme.colors.primaryLight,
-              border: theme.colors.border
+              bg: "#E8F0EC",
+              border: "#D5E3DB"
             };
 
             const catTasks = tasks.filter((t) => t.category === catName);
-            const pendingCount = catTasks.filter((t) => t.status !== "Done").length;
-            const doneCount = catTasks.filter((t) => t.status === "Done").length;
+            const activeCount = catTasks.filter((t) => t.status !== "Done").length;
 
             return (
               <TouchableOpacity
                 key={catName}
                 style={styles.card}
                 onPress={() => onSelectCategoryFilter(catName)}
-                activeOpacity={0.85}
+                activeOpacity={0.8}
               >
-                <View style={styles.cardTop}>
-                  <View style={[styles.badge, { backgroundColor: catStyle.bg, borderColor: catStyle.border }]}>
-                    <View style={[styles.dot, { backgroundColor: catStyle.color }]} />
-                    <Text style={[styles.badgeText, { color: catStyle.color }]}>{catName}</Text>
-                  </View>
-                  <Text style={styles.totalCount}>{catTasks.length} tasks</Text>
+                <View style={styles.cardLeft}>
+                  <View style={[styles.dot, { backgroundColor: catStyle.color }]} />
+                  <Text style={styles.categoryName}>{catName}</Text>
                 </View>
 
-                <View style={styles.statsRow}>
-                  <View style={styles.statBox}>
-                    <Text style={styles.statNumber}>{pendingCount}</Text>
-                    <Text style={styles.statLabel}>Active</Text>
-                  </View>
-                  <View style={styles.statDivider} />
-                  <View style={styles.statBox}>
-                    <Text style={styles.statNumber}>{doneCount}</Text>
-                    <Text style={styles.statLabel}>Completed</Text>
-                  </View>
-                </View>
-
-                <View style={styles.cardFooter}>
-                  <Text style={styles.viewTasksText}>View tasks ➔</Text>
+                <View style={styles.countBadge}>
+                  <Text style={styles.countText}>
+                    {activeCount} active · {catTasks.length} total
+                  </Text>
                 </View>
               </TouchableOpacity>
             );
@@ -113,7 +94,7 @@ export function CategoriesScreen({
       {/* Add Category Modal */}
       <Modal
         visible={modalVisible}
-        animationType="slide"
+        animationType="fade"
         transparent
         onRequestClose={() => setModalVisible(false)}
       >
@@ -126,23 +107,21 @@ export function CategoriesScreen({
 
           <View style={styles.modalSheet}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>CREATE NEW CATEGORY</Text>
+              <Text style={styles.modalTitle}>New Category</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Text style={styles.modalCloseIcon}>✕</Text>
+                <CloseIcon color={theme.colors.textMuted} size={18} />
               </TouchableOpacity>
             </View>
 
-            <Text style={styles.inputLabel}>CATEGORY NAME</Text>
             <TextInput
               style={styles.input}
-              placeholder="e.g., Side Project, Health & Fitness, Finance"
+              placeholder="Category name..."
               placeholderTextColor={theme.colors.textMuted}
               value={newCatName}
               onChangeText={setNewCatName}
               autoFocus
             />
 
-            <Text style={styles.inputLabel}>COLOR THEME</Text>
             <View style={styles.colorRow}>
               {colorPresets.map((c) => (
                 <TouchableOpacity
@@ -163,7 +142,7 @@ export function CategoriesScreen({
               disabled={!newCatName.trim()}
               activeOpacity={0.85}
             >
-              <Text style={styles.saveBtnText}>CREATE CATEGORY</Text>
+              <Text style={styles.saveBtnText}>Done</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -177,141 +156,103 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.bg
   },
-  header: {
+  topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingTop: 16,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border
+    paddingBottom: 12
   },
-  title: {
-    fontSize: 16,
+  sectionLabel: {
+    fontSize: 12,
     fontWeight: "900",
-    color: theme.colors.textPrimary,
-    letterSpacing: 1.2
+    color: "#5C756B",
+    letterSpacing: 1
   },
-  subtitle: {
-    fontSize: 11,
-    color: theme.colors.textSecondary,
-    marginTop: 2
-  },
-  addCategoryBtn: {
+  addBtn: {
     backgroundColor: theme.colors.primary,
-    paddingVertical: 7,
-    paddingHorizontal: 12,
-    borderRadius: 8
+    paddingVertical: 6,
+    paddingHorizontal: 14,
+    borderRadius: 14
   },
-  addCategoryBtnText: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: "#FFFFFF",
-    letterSpacing: 0.8
+  addBtnText: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#FFFFFF"
   },
   scrollContent: {
-    padding: 16,
-    paddingBottom: 100
+    paddingHorizontal: 18,
+    paddingBottom: 24
   },
-  grid: {
-    gap: 12
+  list: {
+    gap: 10
   },
   card: {
-    backgroundColor: theme.colors.surface,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
-    shadowRadius: 6,
-    elevation: 2
-  },
-  cardTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12
+    backgroundColor: theme.colors.surface,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E5ECE8",
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.03,
+    shadowRadius: 4,
+    elevation: 2
   },
-  badge: {
+  cardLeft: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    borderWidth: 1
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    marginRight: 6
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 0.4
-  },
-  totalCount: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: theme.colors.textMuted
-  },
-  statsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: theme.colors.bg,
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    marginBottom: 12
-  },
-  statBox: {
-    flex: 1,
     alignItems: "center"
   },
-  statNumber: {
-    fontSize: 16,
-    fontWeight: "900",
+  dot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 12
+  },
+  categoryName: {
+    fontSize: 15,
+    fontWeight: "700",
     color: theme.colors.textPrimary
   },
-  statLabel: {
-    fontSize: 10,
-    color: theme.colors.textSecondary,
-    fontWeight: "600",
-    marginTop: 1
+  countBadge: {
+    backgroundColor: "#F0F5F2",
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 10
   },
-  statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: theme.colors.border
-  },
-  cardFooter: {
-    alignItems: "flex-end"
-  },
-  viewTasksText: {
+  countText: {
     fontSize: 11,
-    fontWeight: "700",
-    color: theme.colors.primary
+    fontWeight: "600",
+    color: "#5A7269"
   },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(14, 36, 30, 0.65)",
-    justifyContent: "flex-end"
+    backgroundColor: "rgba(14, 36, 30, 0.55)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20
   },
   modalDismiss: {
-    flex: 1
+    ...StyleSheet.absoluteFillObject
   },
   modalSheet: {
+    width: "100%",
+    maxWidth: 400,
     backgroundColor: theme.colors.surface,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: 22,
-    paddingBottom: 36
+    shadowColor: "#0E382F",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    elevation: 12
   },
   modalHeader: {
     flexDirection: "row",
@@ -320,53 +261,41 @@ const styles = StyleSheet.create({
     marginBottom: 16
   },
   modalTitle: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: theme.colors.textPrimary,
-    letterSpacing: 1
-  },
-  modalCloseIcon: {
     fontSize: 16,
-    color: theme.colors.textMuted,
-    fontWeight: "700",
-    padding: 4
-  },
-  inputLabel: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: theme.colors.textSecondary,
-    letterSpacing: 0.8,
-    marginBottom: 6
+    fontWeight: "900",
+    color: theme.colors.primary,
+    letterSpacing: -0.2
   },
   input: {
     backgroundColor: theme.colors.bg,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 10,
+    borderRadius: 14,
     padding: 12,
-    fontSize: 14,
+    fontSize: 15,
     color: theme.colors.textPrimary,
     marginBottom: 16
   },
   colorRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    marginBottom: 22
+    justifyContent: "space-between",
+    marginBottom: 20,
+    paddingHorizontal: 6
   },
   colorCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16
+    width: 30,
+    height: 30,
+    borderRadius: 15
   },
   colorCircleSelected: {
     borderWidth: 3,
-    borderColor: theme.colors.textPrimary
+    borderColor: theme.colors.primary
   },
   saveBtn: {
     backgroundColor: theme.colors.primary,
-    height: 48,
-    borderRadius: 24,
+    height: 46,
+    borderRadius: 23,
     alignItems: "center",
     justifyContent: "center"
   },
@@ -374,9 +303,8 @@ const styles = StyleSheet.create({
     opacity: 0.4
   },
   saveBtnText: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#FFFFFF",
-    letterSpacing: 1
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#FFFFFF"
   }
 });

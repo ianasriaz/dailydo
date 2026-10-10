@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, TouchableOpacity, Modal, StyleSheet } from "react-native";
 import { theme } from "../theme.js";
+import { CloseIcon } from "./Icons.js";
 
 export function CategoryPickerModal({
   visible,
@@ -14,23 +15,18 @@ export function CategoryPickerModal({
   return (
     <Modal
       visible={visible}
-      animationType="slide"
+      animationType="fade"
       transparent
-      onRequestClose={() => onClose()}
+      onRequestClose={onClose}
     >
       <View style={styles.backdrop}>
-        <TouchableOpacity style={styles.dismissArea} activeOpacity={1} onPress={() => onClose()} />
+        <TouchableOpacity style={styles.dismissArea} activeOpacity={1} onPress={onClose} />
 
         <View style={styles.sheet}>
           <View style={styles.header}>
-            <View>
-              <Text style={styles.title}>CHANGE CATEGORY</Text>
-              <Text style={styles.subtitle} numberOfLines={1}>
-                Task: "{task.title}"
-              </Text>
-            </View>
-            <TouchableOpacity style={styles.closeBtn} onPress={() => onClose()} activeOpacity={0.7}>
-              <Text style={styles.closeIcon}>✕</Text>
+            <Text style={styles.title}>Select Category</Text>
+            <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.7}>
+              <CloseIcon color={theme.colors.textMuted} size={18} />
             </TouchableOpacity>
           </View>
 
@@ -38,8 +34,8 @@ export function CategoryPickerModal({
             {categories.map((catName) => {
               const catStyle = theme.categories[catName] || {
                 color: theme.colors.primary,
-                bg: theme.colors.primaryLight,
-                border: theme.colors.border
+                bg: "#E8F0EC",
+                border: "#D5E3DB"
               };
               const isCurrent = task.category === catName;
 
@@ -54,7 +50,7 @@ export function CategoryPickerModal({
                   <Text style={[styles.categoryOptionText, isCurrent && styles.categoryOptionTextCurrent]}>
                     {catName}
                   </Text>
-                  {isCurrent && <Text style={styles.checkMark}>✓</Text>}
+                  {isCurrent && <View style={styles.currentDot} />}
                 </TouchableOpacity>
               );
             })}
@@ -68,46 +64,42 @@ export function CategoryPickerModal({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(14, 36, 30, 0.6)",
-    justifyContent: "flex-end"
+    backgroundColor: "rgba(14, 36, 30, 0.55)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20
   },
   dismissArea: {
-    flex: 1
+    ...StyleSheet.absoluteFillObject
   },
   sheet: {
+    width: "100%",
+    maxWidth: 380,
     backgroundColor: theme.colors.surface,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: "#E5ECE8",
     padding: 22,
-    paddingBottom: 36
+    shadowColor: "#0E382F",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    elevation: 12
   },
   header: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
     marginBottom: 16
   },
   title: {
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: "900",
-    color: theme.colors.textPrimary,
-    letterSpacing: 1,
-    marginBottom: 2
-  },
-  subtitle: {
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-    maxWidth: 260
+    color: theme.colors.primary,
+    letterSpacing: -0.2
   },
   closeBtn: {
-    padding: 6
-  },
-  closeIcon: {
-    fontSize: 16,
-    color: theme.colors.textMuted,
-    fontWeight: "700"
+    padding: 4
   },
   categoriesList: {
     gap: 8
@@ -115,16 +107,16 @@ const styles = StyleSheet.create({
   categoryOption: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: theme.colors.bg,
+    backgroundColor: "#F7FAF8",
     borderWidth: 1,
-    borderColor: theme.colors.border,
+    borderColor: "#E5ECE8",
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 12
+    borderRadius: 14
   },
   categoryOptionCurrent: {
     borderColor: theme.colors.primary,
-    backgroundColor: theme.colors.primaryLight
+    backgroundColor: "#E2ECE6"
   },
   dot: {
     width: 10,
@@ -134,7 +126,7 @@ const styles = StyleSheet.create({
   },
   categoryOptionText: {
     flex: 1,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: "600",
     color: theme.colors.textPrimary
   },
@@ -142,9 +134,10 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     color: theme.colors.primary
   },
-  checkMark: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: theme.colors.primary
+  currentDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: theme.colors.primary
   }
 });

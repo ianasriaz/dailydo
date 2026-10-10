@@ -1,14 +1,15 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { theme } from "../theme.js";
+import { ClockIcon, CloseIcon } from "./Icons.js";
 
 export function TaskCard({ task, onToggleDone, onDelete, onChangeCategory }) {
   const isDone = task.status === "Done";
   const isReminded = task.status === "Reminded";
   const catStyle = theme.categories[task.category] || {
     color: theme.colors.primary,
-    bg: theme.colors.primaryLight,
-    border: theme.colors.border
+    bg: "#E8F0EC",
+    border: "#D5E3DB"
   };
 
   let formattedTime = null;
@@ -29,19 +30,17 @@ export function TaskCard({ task, onToggleDone, onDelete, onChangeCategory }) {
         onPress={() => onToggleDone(task)}
         activeOpacity={0.7}
       >
-        {isDone && <Text style={styles.checkmark}>✓</Text>}
+        {isDone && <View style={styles.checkInner} />}
       </TouchableOpacity>
 
       {/* Main Content */}
       <View style={styles.content}>
-        <View style={styles.headerLine}>
-          <Text style={[styles.title, isDone && styles.titleDone]} numberOfLines={2}>
-            {task.title}
-          </Text>
-        </View>
+        <Text style={[styles.title, isDone && styles.titleDone]} numberOfLines={2}>
+          {task.title}
+        </Text>
 
         <View style={styles.metaRow}>
-          {/* Clickable Category Pill to Change Category */}
+          {/* Clickable Category Pill */}
           <TouchableOpacity
             style={[styles.categoryPill, { backgroundColor: catStyle.bg, borderColor: catStyle.border }]}
             onPress={() => onChangeCategory && onChangeCategory(task)}
@@ -54,7 +53,8 @@ export function TaskCard({ task, onToggleDone, onDelete, onChangeCategory }) {
 
           {formattedTime && (
             <View style={styles.timePill}>
-              <Text style={styles.timeText}>🕒 {formattedTime}</Text>
+              <ClockIcon color="#6B857B" size={12} />
+              <Text style={styles.timeText}>{formattedTime}</Text>
             </View>
           )}
 
@@ -71,8 +71,9 @@ export function TaskCard({ task, onToggleDone, onDelete, onChangeCategory }) {
         style={styles.deleteBtn}
         onPress={() => onDelete(task.taskId)}
         activeOpacity={0.6}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
       >
-        <Text style={styles.deleteText}>✕</Text>
+        <CloseIcon color="#A2B4AC" size={14} />
       </TouchableOpacity>
     </View>
   );
@@ -83,55 +84,55 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: theme.colors.surface,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 14,
+    borderColor: "#E5ECE8",
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     marginBottom: 10,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.03,
     shadowRadius: 4,
     elevation: 2
   },
   cardDone: {
-    opacity: 0.55,
-    backgroundColor: "#F8FAF8"
+    opacity: 0.5,
+    backgroundColor: "#F7FAF8"
   },
   cardReminded: {
-    borderColor: theme.colors.warning,
+    borderColor: "#FDE68A",
     backgroundColor: "#FEFCE8"
   },
   checkbox: {
     width: 22,
     height: 22,
-    borderRadius: 7,
+    borderRadius: 11,
     borderWidth: 2,
-    borderColor: theme.colors.borderFocused,
+    borderColor: "#A9BCB4",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12
+    marginRight: 14
   },
   checkboxDone: {
-    backgroundColor: theme.colors.success,
-    borderColor: theme.colors.success
+    backgroundColor: theme.colors.primary,
+    borderColor: theme.colors.primary
   },
-  checkmark: {
-    color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "900"
+  checkInner: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#FFFFFF"
   },
   content: {
     flex: 1
   },
-  headerLine: {
-    marginBottom: 6
-  },
   title: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "700",
     color: theme.colors.textPrimary,
-    lineHeight: 19
+    lineHeight: 20,
+    marginBottom: 6
   },
   titleDone: {
     textDecorationLine: "line-through",
@@ -144,9 +145,9 @@ const styles = StyleSheet.create({
     gap: 6
   },
   categoryPill: {
-    paddingVertical: 2,
+    paddingVertical: 3,
     paddingHorizontal: 8,
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1
   },
   categoryText: {
@@ -155,23 +156,26 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2
   },
   timePill: {
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    backgroundColor: theme.colors.bg,
-    borderRadius: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 3,
+    paddingHorizontal: 7,
+    backgroundColor: "#F2F6F4",
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: theme.colors.border
+    borderColor: "#E3ECE7",
+    gap: 4
   },
   timeText: {
-    fontSize: 10,
+    fontSize: 11,
     fontWeight: "600",
-    color: theme.colors.textSecondary
+    color: "#526B62"
   },
   remindedPill: {
-    paddingVertical: 2,
-    paddingHorizontal: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 7,
     backgroundColor: "#FEF3C7",
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: "#FDE68A"
   },
@@ -182,12 +186,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5
   },
   deleteBtn: {
-    padding: 8,
-    marginLeft: 4
-  },
-  deleteText: {
-    color: theme.colors.textMuted,
-    fontSize: 14,
-    fontWeight: "700"
+    padding: 6,
+    marginLeft: 6
   }
 });

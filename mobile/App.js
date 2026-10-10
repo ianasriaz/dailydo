@@ -94,13 +94,12 @@ export default function App() {
   const handleSubmitThought = async (rawText) => {
     setIsProcessing(true);
     try {
-      // Pass dynamic categories so Amazon Bedrock classifies into user's live taxonomy!
       const result = await api.parseThoughts(rawText, categories);
       const newTasks = result.tasks || [];
 
       setTasks((prev) => [...newTasks, ...prev]);
       setAgentPopupVisible(false);
-      setActiveTab("tasks"); // Switch to tasks screen to view newly created items
+      setActiveTab("tasks");
     } catch (err) {
       console.error("Thought parsing error:", err);
       const fallbackTask = {
@@ -157,8 +156,8 @@ export default function App() {
       setCategories((prev) => [...prev, name]);
       theme.categories[name] = {
         color: color || theme.colors.primary,
-        bg: color ? `${color}18` : theme.colors.primaryLight,
-        border: color ? `${color}40` : theme.colors.border
+        bg: color ? `${color}18` : "#E8F0EC",
+        border: color ? `${color}40` : "#D5E3DB"
       };
     }
   };
@@ -170,7 +169,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
         <StatusBar barStyle="dark-content" backgroundColor={theme.colors.surface} />
 
         <View style={styles.appContainer}>
@@ -185,10 +184,10 @@ export default function App() {
             />
           )}
 
-          {/* Top Brand Header */}
-          <Header tasks={tasks} />
+          {/* Top Brand & Screen Header */}
+          <Header activeTab={activeTab} />
 
-          {/* Tab Screen Routing */}
+          {/* Screen Content Area */}
           <View style={styles.contentArea}>
             {activeTab === "tasks" && (
               <Timeline
@@ -196,7 +195,6 @@ export default function App() {
                 onToggleDone={handleToggleDone}
                 onDelete={handleDelete}
                 onChangeCategory={handleOpenCategoryChange}
-                onUseExample={(prompt) => handleSubmitThought(prompt)}
                 categoryFilter={categoryFilter}
                 onClearCategoryFilter={() => setCategoryFilter(null)}
               />
@@ -221,11 +219,11 @@ export default function App() {
             )}
 
             {activeTab === "overview" && (
-              <OverviewScreen tasks={tasks} categories={categories} />
+              <OverviewScreen tasks={tasks} />
             )}
           </View>
 
-          {/* Elevated Commercial Bottom Nav Bar */}
+          {/* Elevated Bottom Nav Dock */}
           <BottomNavBar
             activeTab={activeTab}
             onSelectTab={(tab) => {
@@ -235,13 +233,12 @@ export default function App() {
             onOpenAgentPrompt={handleOpenAgentPrompt}
           />
 
-          {/* AI Search / Agent Chat Modal */}
+          {/* Smart Reminder Modal */}
           <AgentSearchPopup
             visible={agentPopupVisible}
             onClose={handleCloseAgentPrompt}
             onSubmit={handleSubmitThought}
             isProcessing={isProcessing}
-            availableCategories={categories}
           />
 
           {/* Category Switcher Modal */}
@@ -271,7 +268,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     borderLeftWidth: Platform.OS === "web" ? 1 : 0,
     borderRightWidth: Platform.OS === "web" ? 1 : 0,
-    borderColor: theme.colors.border
+    borderColor: "#E5ECE8"
   },
   contentArea: {
     flex: 1

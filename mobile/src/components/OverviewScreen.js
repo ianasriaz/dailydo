@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { theme } from "../theme.js";
 
-export function OverviewScreen({ tasks = [], categories = [] }) {
+export function OverviewScreen({ tasks = [] }) {
   const total = tasks.length;
   const completed = tasks.filter((t) => t.status === "Done").length;
   const pending = tasks.filter((t) => t.status !== "Done").length;
@@ -17,60 +17,30 @@ export function OverviewScreen({ tasks = [], categories = [] }) {
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.header}>
-        <Text style={styles.title}>INSIGHTS & PROFILE</Text>
-        <Text style={styles.subtitle}>Daily productivity and schedule health</Text>
-      </View>
-
-      {/* Daily Progress Card */}
+      {/* Daily Workload Card - Directly inspired by reference UI */}
       <View style={styles.card}>
-        <Text style={styles.cardHeaderTitle}>DAILY COMPLETION</Text>
-        <Text style={styles.cardHeaderDesc}>
-          {total === 0
-            ? "No tasks logged yet today. Add tasks to start tracking your completion."
-            : `${completed} of ${total} tasks accomplished today.`}
-        </Text>
-
-        <View style={styles.metricsGrid}>
-          <View style={styles.metricItem}>
-            <Text style={styles.metricVal}>{completionRate}%</Text>
-            <Text style={styles.metricLbl}>Completion Rate</Text>
-          </View>
-          <View style={styles.metricDivider} />
-          <View style={styles.metricItem}>
-            <Text style={styles.metricVal}>{pending}</Text>
-            <Text style={styles.metricLbl}>Active Tasks</Text>
-          </View>
-          <View style={styles.metricDivider} />
-          <View style={styles.metricItem}>
-            <Text style={styles.metricVal}>{completed}</Text>
-            <Text style={styles.metricLbl}>Done</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Weekly Rhythm Card (Inspired by reference UI workload tracker) */}
-      <View style={styles.card}>
-        <View style={styles.cardTitleRow}>
-          <Text style={styles.cardHeaderTitle}>WEEKLY RHYTHM</Text>
-          <Text style={styles.cardBadge}>Active Week</Text>
+        <View style={styles.cardTopRow}>
+          <Text style={styles.cardKicker}>DAILY WORKLOAD</Text>
+          <Text style={styles.kickerMeta}>This Week</Text>
         </View>
 
+        {/* Day Pills Bar */}
         <View style={styles.weekRow}>
           {daysOfWeek.map((day, idx) => {
             const isToday = idx === currentDayIndex;
             return (
               <View
                 key={`${day}-${idx}`}
-                style={[styles.dayPill, isToday && styles.dayPillActive]}
+                style={[styles.dayColumn, isToday && styles.dayColumnActive]}
               >
                 <View
                   style={[
-                    styles.dayIndicatorBar,
-                    isToday && styles.dayIndicatorBarActive
+                    styles.barIndicator,
+                    isToday && styles.barIndicatorActive,
+                    isToday && total > 0 && styles.barIndicatorFilled
                   ]}
                 />
-                <Text style={[styles.dayText, isToday && styles.dayTextActive]}>
+                <Text style={[styles.dayLabel, isToday && styles.dayLabelActive]}>
                   {day}
                 </Text>
               </View>
@@ -78,53 +48,40 @@ export function OverviewScreen({ tasks = [], categories = [] }) {
           })}
         </View>
 
-        <Text style={styles.workloadNote}>
-          Tasks with set deadlines trigger audio chimes and in-app alerts so you never miss a beat.
+        {/* Workload summary pill box */}
+        <View style={styles.summaryBox}>
+          <View>
+            <Text style={styles.summaryTitle}>Today</Text>
+            <Text style={styles.summarySubtitle}>
+              {pending} pending · {completed} completed
+            </Text>
+          </View>
+          <View style={styles.rateBadge}>
+            <Text style={styles.rateVal}>{completionRate}%</Text>
+            <Text style={styles.rateSub}>Done</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Recommendation & Schedule Health Card */}
+      <View style={styles.cardTinted}>
+        <Text style={styles.cardKickerTinted}>SCHEDULE HEALTH</Text>
+        <Text style={styles.headingTinted}>
+          {pending === 0
+            ? "All tasks cleared for today"
+            : `${pending} task${pending === 1 ? "" : "s"} scheduled`}
         </Text>
-      </View>
+        <Text style={styles.bodyTinted}>
+          {pending === 0
+            ? "Your schedule is currently clear. Tap + to set new reminders anytime."
+            : "Tasks with set times will alert you with in-app audio banners."}
+        </Text>
 
-      {/* App Preferences & Cloud Sync (Clean consumer wording) */}
-      <View style={styles.card}>
-        <Text style={styles.cardHeaderTitle}>APP & SYNC PREFERENCES</Text>
-
-        <View style={styles.prefList}>
-          <View style={styles.prefRow}>
-            <View style={styles.prefLeft}>
-              <Text style={styles.prefTitle}>Cloud Synchronization</Text>
-              <Text style={styles.prefSubtitle}>Secure instant sync across your sessions</Text>
-            </View>
-            <View style={styles.activePill}>
-              <Text style={styles.activePillText}>CONNECTED</Text>
-            </View>
-          </View>
-
-          <View style={styles.prefRow}>
-            <View style={styles.prefLeft}>
-              <Text style={styles.prefTitle}>Smart Task Categorization</Text>
-              <Text style={styles.prefSubtitle}>Automatic sorting into your customized taxonomy</Text>
-            </View>
-            <View style={styles.activePill}>
-              <Text style={styles.activePillText}>ACTIVE</Text>
-            </View>
-          </View>
-
-          <View style={styles.prefRow}>
-            <View style={styles.prefLeft}>
-              <Text style={styles.prefTitle}>Timed Reminder Chimes</Text>
-              <Text style={styles.prefSubtitle}>In-app banner notifications with audio</Text>
-            </View>
-            <View style={styles.activePill}>
-              <Text style={styles.activePillText}>ON</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.versionFooter}>
-          <Text style={styles.versionText}>DailyDo · Version 1.0.0 Pro</Text>
+        <View style={styles.statusPill}>
+          <View style={styles.statusDot} />
+          <Text style={styles.statusText}>Cloud Synchronization: Active</Text>
         </View>
       </View>
-
-      <View style={{ height: 100 }} />
     </ScrollView>
   );
 }
@@ -135,188 +92,155 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.bg
   },
   scrollContent: {
-    padding: 18
-  },
-  header: {
-    marginBottom: 16
-  },
-  title: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: theme.colors.textPrimary,
-    letterSpacing: 1.2
-  },
-  subtitle: {
-    fontSize: 11,
-    color: theme.colors.textSecondary,
-    marginTop: 2
+    padding: 18,
+    paddingBottom: 24
   },
   card: {
     backgroundColor: theme.colors.surface,
-    borderRadius: 16,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: 18,
-    marginBottom: 14,
+    borderColor: "#E5ECE8",
+    padding: 20,
+    marginBottom: 16,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.04,
+    shadowOpacity: 0.03,
     shadowRadius: 6,
     elevation: 2
   },
-  cardTitleRow: {
+  cardTopRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 6
+    marginBottom: 16
   },
-  cardHeaderTitle: {
-    fontSize: 11,
-    fontWeight: "900",
-    color: theme.colors.primary,
-    letterSpacing: 1,
-    marginBottom: 2
-  },
-  cardBadge: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: theme.colors.primary,
-    backgroundColor: theme.colors.primaryLight,
-    paddingVertical: 2,
-    paddingHorizontal: 8,
-    borderRadius: 6
-  },
-  cardHeaderDesc: {
+  cardKicker: {
     fontSize: 12,
-    color: theme.colors.textSecondary,
-    marginBottom: 14,
-    lineHeight: 16
-  },
-  metricsGrid: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: theme.colors.bg,
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderWidth: 1,
-    borderColor: theme.colors.borderLight
-  },
-  metricItem: {
-    flex: 1,
-    alignItems: "center"
-  },
-  metricVal: {
-    fontSize: 20,
     fontWeight: "900",
-    color: theme.colors.textPrimary
+    color: "#4A6B60",
+    letterSpacing: 0.8
   },
-  metricLbl: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: theme.colors.textSecondary,
-    marginTop: 2
-  },
-  metricDivider: {
-    width: 1,
-    height: 30,
-    backgroundColor: theme.colors.border
+  kickerMeta: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#7E998E"
   },
   weekRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-end",
     justifyContent: "space-between",
-    marginVertical: 14
-  },
-  dayPill: {
-    width: 38,
     paddingVertical: 10,
-    borderRadius: 12,
-    backgroundColor: theme.colors.bg,
+    marginBottom: 16
+  },
+  dayColumn: {
     alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: theme.colors.borderLight
+    width: 38,
+    paddingVertical: 8,
+    borderRadius: 14
   },
-  dayPillActive: {
-    backgroundColor: theme.colors.primaryLight,
-    borderColor: theme.colors.primary
+  dayColumnActive: {
+    backgroundColor: "#E2ECE6"
   },
-  dayIndicatorBar: {
-    width: 12,
-    height: 18,
-    borderRadius: 6,
-    backgroundColor: "transparent",
+  barIndicator: {
+    width: 14,
+    height: 32,
+    borderRadius: 7,
     borderWidth: 1.5,
-    borderColor: theme.colors.border,
+    borderColor: "#D2DFD8",
+    backgroundColor: "transparent",
     marginBottom: 8
   },
-  dayIndicatorBarActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary
+  barIndicatorActive: {
+    borderColor: theme.colors.primary,
+    borderWidth: 2
   },
-  dayText: {
-    fontSize: 11,
+  barIndicatorFilled: {
+    backgroundColor: theme.colors.primary
+  },
+  dayLabel: {
+    fontSize: 12,
     fontWeight: "700",
-    color: theme.colors.textSecondary
+    color: "#7E998E"
   },
-  dayTextActive: {
+  dayLabelActive: {
     color: theme.colors.primary,
     fontWeight: "900"
   },
-  workloadNote: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
-    lineHeight: 15,
-    fontStyle: "italic"
-  },
-  prefList: {
-    gap: 12,
-    marginTop: 10
-  },
-  prefRow: {
+  summaryBox: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.borderLight
+    backgroundColor: "#F2F6F4",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 16
   },
-  prefLeft: {
-    flex: 1,
-    marginRight: 10
+  summaryTitle: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: theme.colors.textPrimary,
+    marginBottom: 2
   },
-  prefTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: theme.colors.textPrimary
+  summarySubtitle: {
+    fontSize: 12,
+    color: "#5B756B"
   },
-  prefSubtitle: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
-    marginTop: 2
+  rateBadge: {
+    alignItems: "flex-end"
   },
-  activePill: {
-    backgroundColor: "#DCFCE7",
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: 6
-  },
-  activePillText: {
-    fontSize: 9,
+  rateVal: {
+    fontSize: 18,
     fontWeight: "900",
-    color: "#15803D",
-    letterSpacing: 0.5
+    color: theme.colors.primary
   },
-  versionFooter: {
+  rateSub: {
+    fontSize: 10,
+    fontWeight: "700",
+    color: "#6B857B"
+  },
+  cardTinted: {
+    backgroundColor: "#E2ECE6",
+    borderRadius: 24,
+    padding: 20
+  },
+  cardKickerTinted: {
+    fontSize: 12,
+    fontWeight: "900",
+    color: "#2C5245",
+    letterSpacing: 0.8,
+    marginBottom: 6
+  },
+  headingTinted: {
+    fontSize: 17,
+    fontWeight: "800",
+    color: "#0F2E24",
+    marginBottom: 6
+  },
+  bodyTinted: {
+    fontSize: 13,
+    color: "#3F6154",
+    lineHeight: 18,
+    marginBottom: 16
+  },
+  statusPill: {
+    flexDirection: "row",
     alignItems: "center",
-    marginTop: 16,
-    paddingTop: 8
+    backgroundColor: "#FFFFFF",
+    borderRadius: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignSelf: "flex-start"
   },
-  versionText: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
-    fontWeight: "600"
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#15803D",
+    marginRight: 8
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#1B3B30"
   }
 });

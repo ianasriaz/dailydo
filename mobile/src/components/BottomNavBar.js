@@ -1,18 +1,25 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native";
 import { theme } from "../theme.js";
+import {
+  TasksTabIcon,
+  CategoriesTabIcon,
+  CompletedTabIcon,
+  InsightsTabIcon,
+  CenterPlusIcon
+} from "./Icons.js";
 
 export function BottomNavBar({ activeTab, onSelectTab, onOpenAgentPrompt }) {
   const tabs = [
-    { key: "tasks", label: "Tasks", icon: "✓" },
-    { key: "categories", label: "Categories", icon: "▦" },
+    { key: "tasks", label: "Tasks", Icon: TasksTabIcon },
+    { key: "categories", label: "Categories", Icon: CategoriesTabIcon },
     { key: "center_add", isCenter: true },
-    { key: "completed", label: "Completed", icon: "★" },
-    { key: "overview", label: "Overview", icon: "⚙" }
+    { key: "completed", label: "Completed", Icon: CompletedTabIcon },
+    { key: "overview", label: "Insights", Icon: InsightsTabIcon }
   ];
 
   return (
-    <View style={styles.container}>
+    <View style={styles.dock}>
       <View style={styles.bar}>
         {tabs.map((tab) => {
           if (tab.isCenter) {
@@ -21,26 +28,28 @@ export function BottomNavBar({ activeTab, onSelectTab, onOpenAgentPrompt }) {
                 <TouchableOpacity
                   style={styles.centerBtn}
                   onPress={onOpenAgentPrompt}
-                  activeOpacity={0.85}
+                  activeOpacity={0.88}
+                  accessibilityLabel="Add reminder"
                 >
-                  <Text style={styles.centerPlusIcon}>+</Text>
+                  <CenterPlusIcon color="#FFFFFF" size={24} />
                 </TouchableOpacity>
               </View>
             );
           }
 
           const isActive = activeTab === tab.key;
+          const IconComponent = tab.Icon;
+          const iconColor = isActive ? theme.colors.primary : "#6B857B";
+
           return (
             <TouchableOpacity
               key={tab.key}
-              style={[styles.tabItem, isActive && styles.tabItemActive]}
+              style={styles.tabItem}
               onPress={() => onSelectTab(tab.key)}
               activeOpacity={0.7}
             >
-              <View style={[styles.iconWrap, isActive && styles.iconWrapActive]}>
-                <Text style={[styles.tabIcon, isActive && styles.tabIconActive]}>
-                  {tab.icon}
-                </Text>
+              <View style={[styles.iconPill, isActive && styles.iconPillActive]}>
+                <IconComponent color={iconColor} size={20} />
               </View>
               <Text style={[styles.tabLabel, isActive && styles.tabLabelActive]}>
                 {tab.label}
@@ -54,93 +63,68 @@ export function BottomNavBar({ activeTab, onSelectTab, onOpenAgentPrompt }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "transparent"
+  dock: {
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: "#E5EBE7",
+    overflow: "visible"
   },
   bar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
     backgroundColor: theme.colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
     paddingTop: 8,
-    paddingBottom: Platform.OS === "ios" ? 24 : 10,
+    paddingBottom: Platform.OS === "ios" ? 22 : 10,
     paddingHorizontal: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 8
+    overflow: "visible"
   },
   tabItem: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 16
+    flex: 1
   },
-  tabItemActive: {},
-  iconWrap: {
-    paddingVertical: 4,
-    paddingHorizontal: 14,
+  iconPill: {
+    paddingVertical: 5,
+    paddingHorizontal: 16,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 2
+    marginBottom: 3
   },
-  iconWrapActive: {
-    backgroundColor: theme.colors.primaryLight
-  },
-  tabIcon: {
-    fontSize: 16,
-    color: theme.colors.textMuted
-  },
-  tabIconActive: {
-    color: theme.colors.primary,
-    fontWeight: "bold"
+  iconPillActive: {
+    backgroundColor: "#DCE8E1"
   },
   tabLabel: {
-    fontSize: 10,
-    color: theme.colors.textMuted,
+    fontSize: 11,
+    color: "#6B857B",
     fontWeight: "600",
-    letterSpacing: 0.2
+    letterSpacing: 0.1
   },
   tabLabelActive: {
     color: theme.colors.primary,
     fontWeight: "800"
   },
   centerSlot: {
-    position: "relative",
     alignItems: "center",
     justifyContent: "center",
     width: 60,
-    marginTop: -22
+    overflow: "visible"
   },
   centerBtn: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 54,
+    height: 54,
+    borderRadius: 27,
     backgroundColor: theme.colors.primary,
     alignItems: "center",
     justifyContent: "center",
-    shadowColor: theme.colors.primary,
+    marginTop: -24,
+    borderWidth: 3.5,
+    borderColor: theme.colors.surface,
+    shadowColor: "#0E382F",
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
+    shadowOpacity: 0.28,
     shadowRadius: 10,
-    elevation: 10,
-    borderWidth: 3,
-    borderColor: theme.colors.surface
-  },
-  centerPlusIcon: {
-    fontSize: 26,
-    color: "#FFFFFF",
-    fontWeight: "300",
-    lineHeight: 28,
-    marginTop: -2
+    elevation: 8
   }
 });

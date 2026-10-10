@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, ScrollView, StyleSheet } from "react-native";
 import { TaskCard } from "./TaskCard.js";
 import { theme } from "../theme.js";
 
@@ -7,45 +7,37 @@ export function CompletedScreen({ tasks, onToggleDone, onDelete, onChangeCategor
   const completedTasks = tasks.filter((t) => t.status === "Done");
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.title}>COMPLETED</Text>
-          <Text style={styles.subtitle}>
-            {completedTasks.length} task{completedTasks.length === 1 ? "" : "s"} accomplished
-          </Text>
-        </View>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
+    >
+      <View style={styles.topBar}>
+        <Text style={styles.sectionLabel}>ACCOMPLISHED</Text>
+        <Text style={styles.countLabel}>
+          {completedTasks.length} task{completedTasks.length === 1 ? "" : "s"}
+        </Text>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {completedTasks.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <View style={styles.emptyIconBox}>
-              <Text style={styles.emptyIcon}>★</Text>
-            </View>
-            <Text style={styles.emptyTitle}>NO COMPLETED TASKS YET</Text>
-            <Text style={styles.emptySubtitle}>
-              Check off tasks from your schedule to build your daily completion record.
-            </Text>
-          </View>
-        ) : (
-          completedTasks.map((task) => (
-            <TaskCard
-              key={task.taskId}
-              task={task}
-              onToggleDone={onToggleDone}
-              onDelete={onDelete}
-              onChangeCategory={onChangeCategory}
-            />
-          ))
-        )}
-
-        <View style={{ height: 100 }} />
-      </ScrollView>
-    </View>
+      {completedTasks.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyTitle}>No Completed Tasks Yet</Text>
+          <Text style={styles.emptySubtitle}>
+            When you complete tasks from your schedule, they will appear here.
+          </Text>
+        </View>
+      ) : (
+        completedTasks.map((task) => (
+          <TaskCard
+            key={task.taskId}
+            task={task}
+            onToggleDone={onToggleDone}
+            onDelete={onDelete}
+            onChangeCategory={onChangeCategory}
+          />
+        ))
+      )}
+    </ScrollView>
   );
 }
 
@@ -54,63 +46,45 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.bg
   },
-  header: {
+  scrollContent: {
+    padding: 18,
+    paddingBottom: 24
+  },
+  topBar: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border
+    marginBottom: 14
   },
-  title: {
-    fontSize: 16,
+  sectionLabel: {
+    fontSize: 12,
     fontWeight: "900",
-    color: theme.colors.textPrimary,
-    letterSpacing: 1.2
+    color: "#5C756B",
+    letterSpacing: 1
   },
-  subtitle: {
-    fontSize: 11,
-    color: theme.colors.textSecondary,
-    marginTop: 2
-  },
-  scrollContent: {
-    padding: 18
+  countLabel: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: theme.colors.primary
   },
   emptyContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 50
-  },
-  emptyIconBox: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 12
-  },
-  emptyIcon: {
-    fontSize: 20,
-    color: theme.colors.primary,
-    fontWeight: "900"
+    paddingVertical: 80,
+    paddingHorizontal: 24
   },
   emptyTitle: {
-    fontSize: 13,
-    fontWeight: "900",
+    fontSize: 16,
+    fontWeight: "800",
     color: theme.colors.textPrimary,
-    letterSpacing: 0.8,
-    marginBottom: 4
+    marginBottom: 6,
+    textAlign: "center"
   },
   emptySubtitle: {
-    fontSize: 12,
+    fontSize: 13,
     color: theme.colors.textSecondary,
     textAlign: "center",
-    maxWidth: 240,
-    lineHeight: 16
+    lineHeight: 18,
+    maxWidth: 280
   }
 });
