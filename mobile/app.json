@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "DailyDo",
+    "slug": "dailydo",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#09090B",
+    "splash": {
+      "backgroundColor": "#09090B"
+    },
+    "web": {
+      "bundler": "metro"
+    }
+  }
+}

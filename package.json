@@ -1,0 +1,14 @@
+{
+  "name": "dailydo",
+  "version": "1.0.0",
+  "description": "DailyDo — Smart Daily Planner (AWS Bedrock & DynamoDB Powered)",
+  "scripts": {
+    "server": "node backend/server.js",
+    "mobile": "npm --prefix mobile start",
+    "mobile:web": "npm --prefix mobile run web",
+    "test:bedrock": "node backend/test-bedrock-extraction.js"
+  },
+  "keywords": ["dailydo", "aws", "bedrock", "dynamodb", "expo", "react-native"],
+  "author": "ianasriaz",
+  "license": "MIT"
+}
