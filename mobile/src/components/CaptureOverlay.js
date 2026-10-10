@@ -7,8 +7,7 @@ import {
   Modal,
   ActivityIndicator,
   Platform,
-  StyleSheet,
-  KeyboardAvoidingView
+  StyleSheet
 } from "react-native";
 import { theme } from "../theme.js";
 
@@ -16,14 +15,8 @@ export function CaptureOverlay({ visible, onClose, onSubmit, isProcessing }) {
   const [text, setText] = useState("");
   const inputRef = useRef(null);
 
-  // Auto-focus the input as soon as the modal opens to trigger the mobile keyboard immediately
   useEffect(() => {
-    if (visible) {
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 100);
-      return () => clearTimeout(timer);
-    } else {
+    if (!visible) {
       setText("");
     }
   }, [visible]);
@@ -40,89 +33,90 @@ export function CaptureOverlay({ visible, onClose, onSubmit, isProcessing }) {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.keyboardContainer}
-      >
-        <View style={styles.backdrop}>
-          <View style={styles.sheet}>
-            {/* Header */}
-            <View style={styles.headerRow}>
-              <View style={styles.titleBox}>
-                <Text style={styles.headerTitle}>QUICK CAPTURE</Text>
-                <Text style={styles.headerSubtitle}>
-                  Speak with your keyboard mic or type — Bedrock will organize it.
-                </Text>
-              </View>
-              <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.7}>
-                <Text style={styles.closeText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Practical Voice Tip */}
-            <View style={styles.voiceTip}>
-              <Text style={styles.voiceTipTag}>VOICE CAPTURE:</Text>
-              <Text style={styles.voiceTipText}>
-                Tap the microphone key on your keyboard to speak naturally.
+    <Modal
+      visible={visible}
+      animationType="slide"
+      transparent
+      onRequestClose={() => onClose()}
+    >
+      <View style={styles.backdrop}>
+        <View style={styles.sheet}>
+          {/* Header */}
+          <View style={styles.headerRow}>
+            <View style={styles.titleBox}>
+              <Text style={styles.headerTitle}>QUICK CAPTURE</Text>
+              <Text style={styles.headerSubtitle}>
+                Speak with your keyboard mic or type — Bedrock will organize it.
               </Text>
             </View>
-
-            {/* Multiline Text Input */}
-            <TextInput
-              ref={inputRef}
-              style={styles.textInput}
-              multiline
-              placeholder="e.g., Team sync in 1 minute, review lecture slides at 4pm, pick up groceries"
-              placeholderTextColor={theme.colors.textMuted}
-              value={text}
-              onChangeText={setText}
-              autoFocus
-              returnKeyType="default"
-              textAlignVertical="top"
-            />
-
-            {/* Quick Prompt Chips */}
-            <View style={styles.chipsRow}>
-              <Text style={styles.chipsLabel}>PROMPTS:</Text>
-              <TouchableOpacity style={styles.chip} onPress={() => handleChipClick("Sync in 1 minute")}>
-                <Text style={styles.chipText}>+ in 1 min</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.chip} onPress={() => handleChipClick("Pray Zuhr at 1:30")}>
-                <Text style={styles.chipText}>+ Pray Zuhr</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.chip} onPress={() => handleChipClick("Team sync at 4pm")}>
-                <Text style={styles.chipText}>+ Sync at 4pm</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.chip} onPress={() => handleChipClick("Pay electricity by Tuesday")}>
-                <Text style={styles.chipText}>+ Pay bill</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Full-width Submit Button */}
             <TouchableOpacity
-              style={[styles.submitBtn, (!text.trim() || isProcessing) && styles.submitBtnDisabled]}
-              onPress={handleSubmit}
-              disabled={!text.trim() || isProcessing}
-              activeOpacity={0.85}
+              style={styles.closeBtn}
+              onPress={() => onClose()}
+              activeOpacity={0.7}
             >
-              {isProcessing ? (
-                <ActivityIndicator color={theme.colors.accentText} />
-              ) : (
-                <Text style={styles.submitBtnText}>ORGANIZE WITH BEDROCK ➔</Text>
-              )}
+              <Text style={styles.closeText}>✕</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Practical Voice Tip */}
+          <View style={styles.voiceTip}>
+            <Text style={styles.voiceTipTag}>VOICE CAPTURE:</Text>
+            <Text style={styles.voiceTipText}>
+              Tap the microphone key on your keyboard to speak naturally.
+            </Text>
+          </View>
+
+          {/* Multiline Text Input */}
+          <TextInput
+            ref={inputRef}
+            style={styles.textInput}
+            multiline
+            placeholder="e.g., Team sync in 1 minute, review lecture slides at 4pm, pick up groceries"
+            placeholderTextColor={theme.colors.textMuted}
+            value={text}
+            onChangeText={(val) => setText(val)}
+            autoFocus
+            returnKeyType="default"
+            textAlignVertical="top"
+          />
+
+          {/* Quick Prompt Chips */}
+          <View style={styles.chipsRow}>
+            <Text style={styles.chipsLabel}>PROMPTS:</Text>
+            <TouchableOpacity style={styles.chip} onPress={() => handleChipClick("Sync in 1 minute")}>
+              <Text style={styles.chipText}>+ in 1 min</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.chip} onPress={() => handleChipClick("Pray Zuhr at 1:30")}>
+              <Text style={styles.chipText}>+ Pray Zuhr</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.chip} onPress={() => handleChipClick("Team sync at 4pm")}>
+              <Text style={styles.chipText}>+ Sync at 4pm</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.chip} onPress={() => handleChipClick("Pay electricity by Tuesday")}>
+              <Text style={styles.chipText}>+ Pay bill</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Full-width Submit Button */}
+          <TouchableOpacity
+            style={[styles.submitBtn, (!text.trim() || isProcessing) && styles.submitBtnDisabled]}
+            onPress={() => handleSubmit()}
+            disabled={!text.trim() || isProcessing}
+            activeOpacity={0.85}
+          >
+            {isProcessing ? (
+              <ActivityIndicator color={theme.colors.accentText} />
+            ) : (
+              <Text style={styles.submitBtnText}>ORGANIZE WITH BEDROCK ➔</Text>
+            )}
+          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  keyboardContainer: {
-    flex: 1
-  },
   backdrop: {
     flex: 1,
     backgroundColor: "rgba(9, 9, 11, 0.92)",

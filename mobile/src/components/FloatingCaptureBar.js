@@ -7,7 +7,7 @@ export function FloatingCaptureBar({ onOpenCapture, isProcessing }) {
     <View style={styles.dock}>
       <TouchableOpacity
         style={styles.barContainer}
-        onPress={onOpenCapture}
+        onPress={() => onOpenCapture()}
         activeOpacity={0.85}
       >
         <Text style={styles.placeholderText}>
