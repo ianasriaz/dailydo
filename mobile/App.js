@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
-import { StyleSheet, View, SafeAreaView, Platform, StatusBar } from "react-native";
+import { StyleSheet, View, Platform, StatusBar } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { theme } from "./src/theme.js";
 import { Header } from "./src/components/Header.js";
 import { Timeline } from "./src/components/Timeline.js";
@@ -131,43 +132,45 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="light-content" backgroundColor={theme.colors.bg} />
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="light-content" backgroundColor={theme.colors.bg} />
 
-      <View style={styles.appContainer}>
-        {activeNotification && (
-          <NotificationBanner
-            notification={activeNotification}
-            onMarkDone={handleMarkNotificationDone}
-            onDismiss={handleDismissNotification}
+        <View style={styles.appContainer}>
+          {activeNotification && (
+            <NotificationBanner
+              notification={activeNotification}
+              onMarkDone={handleMarkNotificationDone}
+              onDismiss={handleDismissNotification}
+            />
+          )}
+
+          <Header tasks={tasks} />
+
+          <Timeline
+            tasks={tasks}
+            onToggleDone={handleToggleDone}
+            onDelete={handleDelete}
+            onUseExample={(prompt) => {
+              handleSubmitThought(prompt);
+            }}
           />
-        )}
 
-        <Header tasks={tasks} />
+          <FloatingCaptureBar
+            onOpenCapture={handleOpenCapture}
+            isProcessing={isProcessing}
+          />
 
-        <Timeline
-          tasks={tasks}
-          onToggleDone={handleToggleDone}
-          onDelete={handleDelete}
-          onUseExample={(prompt) => {
-            handleSubmitThought(prompt);
-          }}
-        />
-
-        <FloatingCaptureBar
-          onOpenCapture={handleOpenCapture}
-          isProcessing={isProcessing}
-        />
-
-        <CaptureOverlay
-          visible={captureVisible}
-          initialVoiceMode={initialVoiceMode}
-          onClose={handleCloseCapture}
-          onSubmit={handleSubmitThought}
-          isProcessing={isProcessing}
-        />
-      </View>
-    </SafeAreaView>
+          <CaptureOverlay
+            visible={captureVisible}
+            initialVoiceMode={initialVoiceMode}
+            onClose={handleCloseCapture}
+            onSubmit={handleSubmitThought}
+            isProcessing={isProcessing}
+          />
+        </View>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 

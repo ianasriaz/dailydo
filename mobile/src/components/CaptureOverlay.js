@@ -15,20 +15,26 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
   const [text, setText] = useState("");
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
+  const inputRef = useRef(null);
 
   useEffect(() => {
-    if (visible && initialVoiceMode) {
-      startSpeechRecognition();
+    if (visible) {
+      if (initialVoiceMode) {
+        startSpeechRecognition();
+      }
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
     } else {
       stopSpeechRecognition();
     }
   }, [visible, initialVoiceMode]);
 
   const startSpeechRecognition = () => {
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        try {
+    try {
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRecognition) {
           const recognition = new SpeechRecognition();
           recognition.continuous = true;
           recognition.interimResults = true;
@@ -44,8 +50,7 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
             }
           };
 
-          recognition.onerror = (e) => {
-            console.warn("Speech error:", e.error);
+          recognition.onerror = () => {
             setIsListening(false);
           };
 
@@ -57,13 +62,14 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
           recognitionRef.current = recognition;
           setIsListening(true);
           return;
-        } catch (err) {
-          console.warn("Speech init error:", err);
         }
       }
+    } catch (err) {
+      console.warn("Speech recognition warning:", err);
     }
-    // Mobile or unsupported browser fallback simulation
+    // On mobile devices, set listening badge and focus keyboard for dictation mic
     setIsListening(true);
+    inputRef.current?.focus();
   };
 
   const stopSpeechRecognition = () => {
@@ -119,6 +125,7 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
           )}
 
           <TextInput
+            ref={inputRef}
             style={styles.textInput}
             multiline
             placeholder="e.g., Team sync in 1 minute, review lecture slides at 4pm, and pick up groceries"
