@@ -2,6 +2,9 @@ import { BedrockRuntimeClient, ConverseCommand } from "@aws-sdk/client-bedrock-r
 
 const client = new BedrockRuntimeClient({ region: "us-east-1" });
 
+const PRIMARY_MODEL = "amazon.nova-lite-v1:0";
+const FALLBACK_MODEL = "amazon.nova-micro-v1:0";
+
 const DEFAULT_CATEGORIES = [
   "Work & Study",
   "Routines & Habits",
@@ -103,11 +106,11 @@ function localRuleFallback(
 }
 
 /**
- * Intelligent task parsing using Amazon Bedrock (Nova Micro).
+ * Intelligent task parsing using Amazon Bedrock (Nova Lite with Chain-of-Thought Scratchpad).
  * Features:
- * 1. Cognitive linguistic reasoning for voice dictation typos and phonetic sound-alikes.
+ * 1. Deep zero-shot reasoning: reasons through phonetic voice dictation mishearings before extraction.
  * 2. Adaptive Memory Loop: Dynamically ingests user corrections from DynamoDB.
- * 3. Generalized action titling without domain-specific hardcoding.
+ * 3. Generalized action titling without brittle hardcoded word lists.
  * 4. Deterministic local timezone calculation.
  */
 export async function parseTasksWithBedrock(
@@ -144,62 +147,81 @@ User's Current Local Time: ${currentTime}
 Available Categories:
 ${categoryOptionsFormatted}
 ${learnedContextBlock}
-GENERAL REASONING & EXTRACTION PRINCIPLES:
-1. Speech Recognition & Phonetic Correction:
-   Voice dictation frequently mishears words, drops consonants, or transcribes phonetic approximations. You MUST intelligently deduce the intended action rather than keeping garbled text:
-   - Identify phonetic sound-alikes, cultural rituals, project names, and missing verbs.
-   - Example principle: If a phrase sounds like a known routine, daily prayer, medicine, or activity, reconstruct the authentic name.
-   - Example principle: If speech-to-text turns a verb into a noun or vice-versa, reconstruct the logical human intention.
+COGNITIVE REASONING & EXTRACTION FRAMEWORK:
+1. Internal Reasoning ("reasoning"):
+   First analyze the raw speech or text before extracting:
+   - What did the user phonetically speak or type?
+   - Identify speech-to-text acoustic mishearings, dropped consonants, homophones, or garbled words.
+   - Apply broad world knowledge across daily human routines (workplace, healthcare, fitness, daily cultural/religious observances, home errands) to deduce the true human action.
+   - Strip conversational noise ("remind me to", "remind for", "i need to", "don't forget to").
 
-2. Clean Action-Oriented Titles:
-   - Synthesize direct, title-cased action phrases: e.g. "Dentist Checkup", "Review Q3 Report", "Morning Cardio".
-   - Strip conversational noise: "remind me to", "remind for", "i need to", "don't forget to", "set reminder".
+2. Clean Action-Oriented Titles ("title"):
+   - Concise, title-cased, direct action phrase (e.g. "Esha Prayer", "Team Sync", "Dentist Checkup", "Buy Groceries").
    - NEVER output conversational prefixes like "Reminder for...".
 
-3. Deterministic Local Time Calculation:
-   - "dueTime": Output target local time formatted as "YYYY-MM-DDTHH:mm:ss" without any 'Z' or timezone offset.
+3. Deterministic Local Time ("dueTime"):
+   - Output target local time formatted as "YYYY-MM-DDTHH:mm:ss" without any 'Z' or timezone offset.
    - Relative intervals ("in 20 mins") are added to current local time (${currentTime}).
-   - Absolute times ("at 5 pm") use local date ${today} ("${today}T17:00:00").
+   - Absolute times ("at 8 pm") use local date ${today} ("${today}T20:00:00").
    - If no deadline or interval is stated, set "dueTime" to null and "isAnytime" to true.
 
-4. Semantic Taxonomy Mapping:
-   - Select the single most relevant category strictly from the Available Categories list based on the core intent of the task.
+4. Semantic Taxonomy Mapping ("category"):
+   - Select the single most relevant category strictly from the Available Categories list.
 
-Return ONLY a valid JSON array of objects:
-[{"title": "...", "category": "...", "dueTime": "YYYY-MM-DDTHH:mm:ss", "isAnytime": false}]`;
-
-  try {
-    const command = new ConverseCommand({
-      modelId: "amazon.nova-micro-v1:0",
-      messages: [
-        {
-          role: "user",
-          content: [{ text: rawText }]
-        }
-      ],
-      system: [{ text: systemPrompt }],
-      inferenceConfig: {
-        maxTokens: 600,
-        temperature: 0.1
-      }
-    });
-
-    const response = await client.send(command);
-    const contentText = response.output?.message?.content?.[0]?.text || "";
-
-    const cleaned = contentText
-      .replace(/```json/gi, "")
-      .replace(/```/g, "")
-      .trim();
-
-    const parsed = JSON.parse(cleaned);
-    if (Array.isArray(parsed) && parsed.length > 0) {
-      return { tasks: parsed, source: "amazon.nova-micro-v1:0" };
+Return ONLY a valid JSON object matching this structure:
+{
+  "reasoning": "Brief analysis of phonetics and true intent",
+  "tasks": [
+    {
+      "title": "...",
+      "category": "...",
+      "dueTime": "YYYY-MM-DDTHH:mm:ss",
+      "isAnytime": false
     }
-    throw new Error("Invalid array returned from Bedrock");
-  } catch (err) {
-    console.warn("Bedrock parsing fallback triggered:", err.message);
-    const fallbackTasks = localRuleFallback(rawText, today, currentTime, categoryList, learnedCorrections);
-    return { tasks: fallbackTasks, source: "local-fallback" };
+  ]
+}`;
+
+  // Try Nova Lite first (higher reasoning), then Nova Micro fallback
+  const modelsToTry = [PRIMARY_MODEL, FALLBACK_MODEL];
+
+  for (const modelId of modelsToTry) {
+    try {
+      const command = new ConverseCommand({
+        modelId,
+        messages: [
+          {
+            role: "user",
+            content: [{ text: rawText }]
+          }
+        ],
+        system: [{ text: systemPrompt }],
+        inferenceConfig: {
+          maxTokens: 600,
+          temperature: 0.1
+        }
+      });
+
+      const response = await client.send(command);
+      const contentText = response.output?.message?.content?.[0]?.text || "";
+
+      const cleaned = contentText
+        .replace(/```json/gi, "")
+        .replace(/```/g, "")
+        .trim();
+
+      const parsed = JSON.parse(cleaned);
+
+      // Handle both { tasks: [...] } and direct array [...]
+      const tasksArray = Array.isArray(parsed) ? parsed : (parsed.tasks || []);
+      if (Array.isArray(tasksArray) && tasksArray.length > 0) {
+        return { tasks: tasksArray, source: modelId, reasoning: parsed.reasoning || null };
+      }
+    } catch (err) {
+      console.warn(`Model ${modelId} parsing attempt failed:`, err.message);
+    }
   }
+
+  console.warn("Bedrock parsing fallback triggered; using local rules");
+  const fallbackTasks = localRuleFallback(rawText, today, currentTime, categoryList, learnedCorrections);
+  return { tasks: fallbackTasks, source: "local-fallback" };
 }
