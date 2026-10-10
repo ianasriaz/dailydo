@@ -56,7 +56,7 @@ export function AgentSearchPopup({ visible, onClose, onSubmit, isProcessing, ava
           <View style={styles.topBar}>
             <View style={styles.agentBadge}>
               <Text style={styles.agentSparkle}>✦</Text>
-              <Text style={styles.agentBadgeText}>BEDROCK AGENT</Text>
+              <Text style={styles.agentBadgeText}>SMART CAPTURE</Text>
             </View>
             <TouchableOpacity
               style={styles.closeBtn}
@@ -69,7 +69,7 @@ export function AgentSearchPopup({ visible, onClose, onSubmit, isProcessing, ava
 
           <Text style={styles.cardHeading}>What's on your mind?</Text>
           <Text style={styles.cardSubheading}>
-            Dump your raw thoughts, meetings, or chores. AI extracts deadlines and sorts them into your categories.
+            Dump your raw thoughts, meetings, or chores. DailyDo extracts deadlines and sorts them into your categories automatically.
           </Text>
 
           {/* AI Search / Agent Chat Input Box */}

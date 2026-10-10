@@ -44,7 +44,7 @@ export function CategoriesScreen({
         <View>
           <Text style={styles.title}>CATEGORIES</Text>
           <Text style={styles.subtitle}>
-            Amazon Bedrock classifies tasks into this taxonomy.
+            Tasks are organized automatically into your categories.
           </Text>
         </View>
 
@@ -163,7 +163,7 @@ export function CategoriesScreen({
               disabled={!newCatName.trim()}
               activeOpacity={0.85}
             >
-              <Text style={styles.saveBtnText}>ADD TO BEDROCK TAXONOMY</Text>
+              <Text style={styles.saveBtnText}>CREATE CATEGORY</Text>
             </TouchableOpacity>
           </View>
         </View>

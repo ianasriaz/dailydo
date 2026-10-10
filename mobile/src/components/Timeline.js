@@ -54,7 +54,7 @@ export function Timeline({
           <Text style={styles.emptySubtitle}>
             {categoryFilter
               ? "Change another task's category or tap '+' below to add new thoughts."
-              : "Tap the '+' button below to dump natural thoughts and let Bedrock organize your schedule."}
+              : "Tap the '+' button below to dump natural thoughts and let DailyDo organize your schedule."}
           </Text>
 
           {!categoryFilter && (

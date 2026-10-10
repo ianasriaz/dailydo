@@ -46,7 +46,7 @@ export function CaptureOverlay({ visible, onClose, onSubmit, isProcessing }) {
             <View style={styles.titleBox}>
               <Text style={styles.headerTitle}>QUICK CAPTURE</Text>
               <Text style={styles.headerSubtitle}>
-                Speak with your keyboard mic or type — Bedrock will organize it.
+                Speak with your keyboard mic or type — DailyDo will organize it.
               </Text>
             </View>
             <TouchableOpacity

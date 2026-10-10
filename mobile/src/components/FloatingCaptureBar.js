@@ -11,7 +11,7 @@ export function FloatingCaptureBar({ onOpenCapture, isProcessing }) {
         activeOpacity={0.85}
       >
         <Text style={styles.placeholderText}>
-          {isProcessing ? "AWS Bedrock organizing..." : "Dump thoughts (voice or text)..."}
+          {isProcessing ? "Organizing your schedule..." : "Dump thoughts (voice or text)..."}
         </Text>
 
         <View style={styles.addBtn}>
