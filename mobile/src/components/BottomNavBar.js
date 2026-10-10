@@ -20,10 +20,10 @@ export function BottomNavBar({ activeTab, onSelectTab, onOpenAgentPrompt }) {
           onPress={() => onSelectTab("tasks")}
           activeOpacity={0.7}
         >
-          <View style={[styles.iconPill, isTasksActive && styles.iconPillActive]}>
+          <View style={styles.iconWrap}>
             <TasksTabIcon
-              color={isTasksActive ? theme.colors.primary : "#6B857B"}
-              size={19}
+              color={isTasksActive ? theme.colors.primary : "#7C9288"}
+              size={21}
             />
           </View>
           <Text style={[styles.tabLabel, isTasksActive && styles.tabLabelActive]}>
@@ -50,10 +50,10 @@ export function BottomNavBar({ activeTab, onSelectTab, onOpenAgentPrompt }) {
           onPress={() => onSelectTab("categories")}
           activeOpacity={0.7}
         >
-          <View style={[styles.iconPill, isCategoriesActive && styles.iconPillActive]}>
+          <View style={styles.iconWrap}>
             <CategoriesTabIcon
-              color={isCategoriesActive ? theme.colors.primary : "#6B857B"}
-              size={19}
+              color={isCategoriesActive ? theme.colors.primary : "#7C9288"}
+              size={21}
             />
           </View>
           <Text style={[styles.tabLabel, isCategoriesActive && styles.tabLabelActive]}>
@@ -87,23 +87,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     minWidth: 80
   },
-  iconPill: {
-    width: 52,
+  iconWrap: {
     height: 28,
-    borderRadius: 14,
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "transparent"
-  },
-  iconPillActive: {
-    backgroundColor: "#DCE8E1"
+    justifyContent: "center"
   },
   tabLabel: {
     fontSize: 11,
-    color: "#6B857B",
+    color: "#7C9288",
     fontWeight: "600",
     letterSpacing: 0.1,
-    marginTop: 3
+    marginTop: 2
   },
   tabLabelActive: {
     color: theme.colors.primary,
