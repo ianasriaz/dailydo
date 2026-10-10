@@ -2,7 +2,7 @@ import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client
 import { TranscribeClient, StartTranscriptionJobCommand, GetTranscriptionJobCommand } from "@aws-sdk/client-transcribe";
 import crypto from "crypto";
 
-const S3_BUCKET = "beingbeginner-uploads";
+const S3_BUCKET = "dailydo-audio-855735869000";
 const REGION = "us-east-1";
 
 const s3 = new S3Client({ region: REGION });
