@@ -14,7 +14,9 @@ const DEFAULT_CATEGORIES = [
 ];
 
 /**
- * Robust rule-based fallback when offline or in case of network interruption
+ * Clean rule-based fallback when offline or in case of network interruption.
+ * Relies strictly on parsing explicit temporal markers and user's learned memory,
+ * with ZERO hardcoded keyword dictionaries or assumed specific terms.
  */
 function localRuleFallback(
   rawText,
@@ -47,7 +49,7 @@ function localRuleFallback(
     let category = categories[0] || "Personal & Errands";
     const lower = part.toLowerCase();
 
-    // Check against learned memory first
+    // Check against learned user memory first
     const match = learnedCorrections.find(
       (c) => c.originalText && part.toLowerCase().includes(c.originalText.toLowerCase())
     );
@@ -55,30 +57,6 @@ function localRuleFallback(
       if (match.correctedTitle) title = match.correctedTitle;
       if (match.correctedCategory && categories.includes(match.correctedCategory)) {
         category = match.correctedCategory;
-      }
-    } else {
-      if (
-        lower.includes("pray") ||
-        lower.includes("namaz") ||
-        lower.includes("zuhr") ||
-        lower.includes("zohar") ||
-        lower.includes("dhuhr") ||
-        lower.includes("asr") ||
-        lower.includes("maghrib") ||
-        lower.includes("isha") ||
-        lower.includes("esha") ||
-        lower.includes("fajr") ||
-        lower.includes("habit") ||
-        lower.includes("routine") ||
-        lower.includes("meditat")
-      ) {
-        if (categories.includes("Routines & Habits")) category = "Routines & Habits";
-      } else if (lower.includes("meeting") || lower.includes("sync") || lower.includes("study") || lower.includes("class") || lower.includes("work") || lower.includes("event") || lower.includes("aws")) {
-        if (categories.includes("Work & Study")) category = "Work & Study";
-      } else if (lower.includes("gym") || lower.includes("workout") || lower.includes("doctor") || lower.includes("health")) {
-        if (categories.includes("Health & Fitness")) category = "Health & Fitness";
-      } else if (lower.includes("pay") || lower.includes("bill") || lower.includes("bank") || lower.includes("rent")) {
-        if (categories.includes("Finance")) category = "Finance";
       }
     }
 
@@ -89,7 +67,7 @@ function localRuleFallback(
     let dueTime = null;
     let isAnytime = true;
 
-    // Check for "in X minute(s)"
+    // Check for relative interval: "in X minute(s)"
     const minMatch = part.match(/in\s+(\d+)\s+min(?:ute)?s?/i);
     if (minMatch && userLocalDate && userLocalTime) {
       const mins = parseInt(minMatch[1], 10);
@@ -102,7 +80,7 @@ function localRuleFallback(
       isAnytime = false;
     }
 
-    // Check for "at X:XX" or "at Xpm/am"
+    // Check for explicit time: "at X:XX" or "at Xpm/am"
     const timeMatch = part.match(/at\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
     if (timeMatch && !minMatch) {
       let hours = parseInt(timeMatch[1], 10);
@@ -116,32 +94,13 @@ function localRuleFallback(
       const tm = String(minutes).padStart(2, "0");
       dueTime = `${targetDate}T${th}:${tm}:00`;
       isAnytime = false;
-    } else if (!timeMatch && !minMatch) {
-      // Default prayer times if user specifies routine without explicit hour
-      if (lower.includes("fajr") || lower.includes("fajar")) {
-        dueTime = `${targetDate}T05:30:00`;
-        isAnytime = false;
-        title = "Fajr Prayer";
-      } else if (lower.includes("zohar") || lower.includes("zuhr") || lower.includes("dhuhr")) {
-        dueTime = `${targetDate}T13:00:00`;
-        isAnytime = false;
-        title = "Zuhr Prayer";
-      } else if (lower.includes("asr") || lower.includes("asor")) {
-        dueTime = `${targetDate}T16:45:00`;
-        isAnytime = false;
-        title = "Asr Prayer";
-      } else if (lower.includes("maghrib") || lower.includes("magrib")) {
-        dueTime = `${targetDate}T18:30:00`;
-        isAnytime = false;
-        title = "Maghrib Prayer";
-      } else if (lower.includes("isha") || lower.includes("esha")) {
-        dueTime = `${targetDate}T20:00:00`;
-        isAnytime = false;
-        title = "Esha Prayer";
-      }
     }
 
-    title = title.charAt(0).toUpperCase() + title.slice(1);
+    // Convert title to Title Case
+    title = title
+      .split(" ")
+      .map((w) => (w.length > 0 ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : ""))
+      .join(" ");
 
     return {
       title,
@@ -195,40 +154,35 @@ Tomorrow's Date: ${tomorrowDate}
 Available Categories:
 ${categoryOptionsFormatted}
 ${learnedContextBlock}
-COGNITIVE REASONING & EXTRACTION FRAMEWORK:
-1. Strict Subject Fidelity:
-   - NEVER substitute the user's requested subject with another routine, prayer, or event!
-   - If user says "Zohar" or "Zuhr", title MUST be "Zohar Prayer" or "Zuhr Prayer". NEVER replace with another prayer (like Fajr, Asr, Maghrib, or Esha).
-   - If user says "Asr", title is "Asr Prayer". If "Fajr", title is "Fajr Prayer". If "Maghrib", title is "Maghrib Prayer".
-   - Fix speech recognition acoustic errors: "AWS even had 3:00 p.m." -> "AWS Event" at 3:00 PM.
+GENERAL REASONING & EXTRACTION PRINCIPLES:
+1. Strict Subject Preservation & Speech Denoising:
+   - Extract the user's intended subject, action, or event. NEVER swap the subject or replace it with an unrelated activity.
+   - Voice Dictation & Phonetic Correction: Voice input frequently mis-transcribes words phonetically or acoustically (e.g., "priya" for "prayer", "even had" for "event at", "sink" for "sync", "standard" for "standup").
+   - Retain all proper nouns, modifiers, and specific names! When fixing a misheard word, NEVER drop the surrounding identifying words (e.g., "Esha priya" -> "Esha Prayer", "Sarah dinner" -> "Dinner With Sarah").
+   - Preserve the user's preferred naming / transliteration in the title (e.g., if user says "Zohar prayer", title as "Zohar Prayer"; if user says "Zuhr prayer", title as "Zuhr Prayer").
+   - Format titles cleanly in Title Case (e.g. "Zohar Prayer", "Dinner With Sarah", "Team Standup").
+   - Strip conversational noise: "remind me for", "remind me to", "please remind", "don't forget to", "i need to". NEVER include "Reminder for..." in the title.
 
-2. Routine & Prayer Timing Intelligence:
-   - If user asks for a known daily routine or prayer with a day indicator ("tomorrow" or "today") without an explicit hour, use the exact standard hour:
-     - Dawn prayer ("Fajr"): 05:30 (5:30 AM)
-     - Noon / midday prayer ("Zuhr", "Zohar", "Dhuhr"): 13:00 (1:00 PM)
-     - Afternoon prayer ("Asr"): 16:45 (4:45 PM)
-     - Sunset prayer ("Maghrib"): 18:30 (6:30 PM)
-     - Night prayer ("Isha", "Esha"): 20:00 (8:00 PM)
-   - If an explicit hour is given ("at 3:00 p.m."), use that exact explicit time.
-   - All prayers, namaz, worship, meditation, and daily rituals belong in "Routines & Habits".
+2. Commonsense & Natural Diurnal Time Resolution:
+   - When an explicit time or relative interval is provided ("at 3:00 pm", "in 20 mins", "at 8 pm"), calculate that exact local timestamp ("YYYY-MM-DDTHH:mm:ss").
+   - Multi-Cultural & Regional Diurnal Fluency:
+     Users globally speak with diverse dialects and transliterations (e.g. South Asian/Urdu "Zohar"/"Fajar"/"Esha" alongside Arabic "Zuhr"/"Dhuhr"/"Fajr"/"Isha", Jewish Tefillah, or secular diurnal routines).
+     When a day indicator is provided ("today", "tomorrow") WITHOUT an explicit hour, resolve to the appropriate natural diurnal window:
+       * Dawn / sunrise routines or prayers (Fajr / Fajar): ~05:30
+       * Morning / breakfast / standup: ~08:30 - 09:00
+       * Midday / solar noon routines or prayers (Zuhr / Zohar / Dhuhr, lunch): ~12:30 - 13:00
+       * Afternoon routines or prayers (Asr): ~16:30 - 17:00
+       * Sunset / dusk / evening prayers (Maghrib): ~18:30 - 19:00
+       * Night / nightfall prayers (Isha / Esha, bedtime): ~20:00 - 20:30
+     - If the task is flexible without an inherent diurnal window (e.g. "buy groceries tomorrow"), set "dueTime" to null and "isAnytime" to true.
+   - Format "dueTime" as "YYYY-MM-DDTHH:mm:ss" in user's local timeline (use "${tomorrowDate}" for tomorrow, "${today}" for today). Do NOT append "Z" or timezone offset.
 
-3. Clean Action-Oriented Titles:
-   - Concise, title-cased, direct action phrase (e.g. "Zuhr Prayer", "AWS Event", "Team Standup", "Buy Groceries").
-   - Strip conversational noise: "remind me for the", "remind me to", "remind for", "please set reminder".
-   - NEVER output conversational prefixes like "Reminder for...".
-
-4. Deterministic Local Time ("dueTime"):
-   - "YYYY-MM-DDTHH:mm:ss" in user's local timeline. No "Z" or offset.
-   - For "tomorrow", use date "${tomorrowDate}". For "today", use date "${today}".
-   - Relative intervals ("in 20 mins") are added to current local time (${currentTime}).
-   - If no deadline or interval is stated, set "dueTime" to null and "isAnytime" to true.
-
-5. Semantic Taxonomy Mapping:
-   - Select the single most relevant category strictly from the Available Categories list.
+3. Semantic Taxonomy Categorization:
+   - Assign each task to the single most relevant category strictly from the Available Categories list based on the core nature of the activity (e.g. spiritual routines & habits -> "Routines & Habits", work/study -> "Work & Study", health/wellness -> "Health & Fitness", errands -> "Personal & Errands", bills/money -> "Finance").
 
 Return ONLY a valid JSON object matching this structure:
 {
-  "reasoning": "Brief analysis of subject fidelity, speech phonetics, and intent",
+  "reasoning": "Brief analysis of the user's intended subject, acoustic correction, and time resolution",
   "tasks": [
     {
       "title": "...",
