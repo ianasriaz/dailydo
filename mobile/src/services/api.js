@@ -1,11 +1,9 @@
 import { Platform } from "react-native";
 
-// On web / simulator, localhost works; on Android emulator 10.0.2.2 is standard.
-// On physical devices using Expo Go, change this or it automatically attempts local host.
+// On web, relative path ""; on mobile devices on Wi-Fi, use laptop LAN IP
 const BASE_URL = Platform.select({
-  android: "http://10.0.2.2:4000",
   web: "",
-  default: "http://localhost:4000"
+  default: "http://192.168.100.8:4000"
 });
 
 export const api = {

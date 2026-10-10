@@ -9,7 +9,7 @@ Build mode: fast
 
 ## Slices
 
-- [ ] **1. You can capture thoughts and see AI-extracted tasks in the mobile schedule**
+- [x] **1. You can capture thoughts and see AI-extracted tasks in the mobile schedule**
   Becomes usable: A running mobile app displaying the brutalist dark theme, floating capture bar, and AWS Bedrock extraction API that takes a freeform thought, calls Amazon Nova Micro, and renders the split tasks categorized in the schedule.
   Why now: Bootstraps the app, establishes the mobile interface, and proves the unique kernel and external AWS Bedrock AI integration right in slice one.
   PRD ref: `prd.md > The Core Journey` (steps 1–6), `prd.md > Features and Behavior` (Natural Language Voice & Text Capture, AI Task Extraction & Categorization)
@@ -19,7 +19,7 @@ Build mode: fast
   Learner check: Open the app, type or speak a messy thought in the capture overlay, submit, and see the tasks appear organized into their category badges.
   Commit: `Add core capture bar, Bedrock AI parsing, and mobile timeline`
 
-- [ ] **2. Tasks sync and persist in Amazon DynamoDB cloud storage**
+- [x] **2. Tasks sync and persist in Amazon DynamoDB cloud storage**
   Becomes usable: Tasks created via capture (or reloaded on app startup) are saved, updated, and retrieved from Amazon DynamoDB table `DailyDo_Tasks`.
   Why now: Persists user data in real AWS cloud storage so tasks survive app restarts and sync across devices, proving the second major AWS integration.
   PRD ref: `prd.md > States and Boundaries` (Storage Boundary), `prd.md > The Core Journey` (step 9)
@@ -29,7 +29,7 @@ Build mode: fast
   Learner check: Create a task, refresh or reload the app, and verify that your tasks load directly from DynamoDB.
   Commit: `Persist tasks and timeline state in Amazon DynamoDB`
 
-- [ ] **3. Timed reminders, audio chime, and in-app notification banner**
+- [x] **3. Timed reminders, audio chime, and in-app notification banner**
   Becomes usable: When a task is due (e.g., 1 minute from now), an in-app alert banner drops down at the top of the mobile screen with an audible chime, status transitions to `Reminded`, and tapping "Mark Done" updates the task in DynamoDB.
   Why now: Completes the full end-to-end loop and provides the exact demonstrable beat needed for the 1–3 minute Devpost demo video.
   PRD ref: `prd.md > Features and Behavior` (Timed In-App Notifications, Task Management & Timeline Display), `prd.md > The Core Journey` (steps 7–8)
@@ -61,4 +61,6 @@ Reflection: [to be recorded upon completion]
 Activity mode: [to be recorded upon completion]
 
 ## Revisions
+
+- Upgraded Expo to SDK 57 — discovered user's mobile device runs the latest Expo Go client (SDK 57) requiring upgraded package versions and LAN IP configuration (192.168.100.8) for seamless on-device testing.
 
