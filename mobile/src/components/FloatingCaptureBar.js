@@ -1,6 +1,5 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { CleanMicIcon } from "./CleanMicIcon.js";
 import { theme } from "../theme.js";
 
 export function FloatingCaptureBar({ onOpenCapture, isProcessing }) {
@@ -8,25 +7,15 @@ export function FloatingCaptureBar({ onOpenCapture, isProcessing }) {
     <View style={styles.dock}>
       <TouchableOpacity
         style={styles.barContainer}
-        onPress={() => onOpenCapture(false)}
+        onPress={onOpenCapture}
         activeOpacity={0.85}
       >
         <Text style={styles.placeholderText}>
-          {isProcessing ? "AWS Bedrock organizing..." : "Tap to type or speak thought..."}
+          {isProcessing ? "AWS Bedrock organizing..." : "Dump thoughts (voice or text)..."}
         </Text>
 
-        <View style={styles.actionsRow}>
-          <TouchableOpacity
-            style={styles.micBtn}
-            onPress={() => onOpenCapture(true)}
-            activeOpacity={0.7}
-          >
-            <CleanMicIcon size={16} color={theme.colors.accent} />
-          </TouchableOpacity>
-
-          <View style={styles.sendBtn}>
-            <Text style={styles.sendIcon}>➔</Text>
-          </View>
+        <View style={styles.addBtn}>
+          <Text style={styles.addBtnIcon}>+</Text>
         </View>
       </TouchableOpacity>
     </View>
@@ -52,7 +41,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.borderFocused,
     borderRadius: 30,
     paddingVertical: 10,
-    paddingHorizontal: 18,
+    paddingHorizontal: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.5,
@@ -65,35 +54,19 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     flex: 1
   },
-  actionsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8
-  },
-  micBtn: {
+  addBtn: {
     width: 38,
     height: 38,
     borderRadius: 19,
-    backgroundColor: "rgba(204, 255, 0, 0.15)",
-    borderWidth: 1,
-    borderColor: theme.colors.accent,
-    justifyContent: "center",
-    alignItems: "center"
-  },
-  micIcon: {
-    fontSize: 17
-  },
-  sendBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
     backgroundColor: theme.colors.accent,
     justifyContent: "center",
     alignItems: "center"
   },
-  sendIcon: {
-    fontSize: 16,
+  addBtnIcon: {
+    fontSize: 22,
     fontWeight: "900",
-    color: theme.colors.accentText
+    color: theme.colors.accentText,
+    lineHeight: 24,
+    marginTop: -1
   }
 });

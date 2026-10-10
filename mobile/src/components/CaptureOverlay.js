@@ -10,79 +10,26 @@ import {
   StyleSheet,
   KeyboardAvoidingView
 } from "react-native";
-import { CleanMicIcon } from "./CleanMicIcon.js";
 import { theme } from "../theme.js";
 
-export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, isProcessing }) {
+export function CaptureOverlay({ visible, onClose, onSubmit, isProcessing }) {
   const [text, setText] = useState("");
-  const [isWebListening, setIsWebListening] = useState(false);
   const inputRef = useRef(null);
-  const webRecognitionRef = useRef(null);
 
-  // Immediately focus input when opened so the mobile keyboard & its native dictation mic appear
+  // Auto-focus the input as soon as the modal opens to trigger the mobile keyboard immediately
   useEffect(() => {
     if (visible) {
       const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
-
-      // On Web browser only, if Web Speech API is present, start real-time listener
-      if (Platform.OS === "web" && typeof window !== "undefined") {
-        startWebSpeech();
-      }
-
       return () => clearTimeout(timer);
     } else {
-      stopWebSpeech();
       setText("");
     }
   }, [visible]);
 
-  const startWebSpeech = () => {
-    if (Platform.OS !== "web" || typeof window === "undefined") return;
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    try {
-      const rec = new SpeechRecognition();
-      rec.continuous = true;
-      rec.interimResults = true;
-      rec.lang = "en-US";
-
-      rec.onresult = (event) => {
-        let transcript = "";
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          transcript += event.results[i][0].transcript;
-        }
-        if (transcript) {
-          setText(prev => (prev ? `${prev} ${transcript}` : transcript));
-        }
-      };
-
-      rec.onerror = () => setIsWebListening(false);
-      rec.onend = () => setIsWebListening(false);
-
-      rec.start();
-      webRecognitionRef.current = rec;
-      setIsWebListening(true);
-    } catch (err) {
-      console.warn("Web speech not available:", err);
-    }
-  };
-
-  const stopWebSpeech = () => {
-    if (webRecognitionRef.current) {
-      try {
-        webRecognitionRef.current.stop();
-      } catch {}
-      webRecognitionRef.current = null;
-    }
-    setIsWebListening(false);
-  };
-
   const handleSubmit = () => {
     if (!text.trim() || isProcessing) return;
-    stopWebSpeech();
     onSubmit(text.trim());
     setText("");
   };
@@ -90,18 +37,6 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
   const handleChipClick = (snippet) => {
     setText(prev => (prev ? `${prev}, ${snippet}` : snippet));
     inputRef.current?.focus();
-  };
-
-  const handleMicClick = () => {
-    // Focus the text input so the mobile keyboard's instant mic key is active
-    inputRef.current?.focus();
-    if (Platform.OS === "web") {
-      if (isWebListening) {
-        stopWebSpeech();
-      } else {
-        startWebSpeech();
-      }
-    }
   };
 
   return (
@@ -117,7 +52,7 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
               <View style={styles.titleBox}>
                 <Text style={styles.headerTitle}>QUICK CAPTURE</Text>
                 <Text style={styles.headerSubtitle}>
-                  Speak with keyboard mic or type — Bedrock will organize it.
+                  Speak with your keyboard mic or type — Bedrock will organize it.
                 </Text>
               </View>
               <TouchableOpacity style={styles.closeBtn} onPress={onClose} activeOpacity={0.7}>
@@ -125,26 +60,15 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
               </TouchableOpacity>
             </View>
 
-            {/* Instant Voice Guide Banner */}
-            <TouchableOpacity
-              style={styles.voiceGuideBanner}
-              onPress={handleMicClick}
-              activeOpacity={0.85}
-            >
-              <View style={styles.voiceGuideIconBox}>
-                <CleanMicIcon size={14} color={theme.colors.accent} active={isWebListening} />
-              </View>
-              <View style={styles.voiceGuideTextBox}>
-                <Text style={styles.voiceGuideTitle}>
-                  {isWebListening ? "WEB MIC LISTENING — SPEAK NOW" : "INSTANT VOICE CAPTURE"}
-                </Text>
-                <Text style={styles.voiceGuideSub}>
-                  Tap the microphone key on your phone keyboard to write instantly as you speak.
-                </Text>
-              </View>
-            </TouchableOpacity>
+            {/* Practical Voice Tip */}
+            <View style={styles.voiceTip}>
+              <Text style={styles.voiceTipTag}>VOICE CAPTURE:</Text>
+              <Text style={styles.voiceTipText}>
+                Tap the microphone key on your keyboard to speak naturally.
+              </Text>
+            </View>
 
-            {/* Main Text Input */}
+            {/* Multiline Text Input */}
             <TextInput
               ref={inputRef}
               style={styles.textInput}
@@ -158,7 +82,7 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
               textAlignVertical="top"
             />
 
-            {/* Quick Prompts */}
+            {/* Quick Prompt Chips */}
             <View style={styles.chipsRow}>
               <Text style={styles.chipsLabel}>PROMPTS:</Text>
               <TouchableOpacity style={styles.chip} onPress={() => handleChipClick("Sync in 1 minute")}>
@@ -175,29 +99,19 @@ export function CaptureOverlay({ visible, initialVoiceMode, onClose, onSubmit, i
               </TouchableOpacity>
             </View>
 
-            {/* Footer */}
-            <View style={styles.footerRow}>
-              <TouchableOpacity
-                style={styles.micFocusBtn}
-                onPress={handleMicClick}
-                activeOpacity={0.8}
-              >
-                <CleanMicIcon size={18} color={theme.colors.accent} active={isWebListening} />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.submitBtn, (!text.trim() || isProcessing) && styles.submitBtnDisabled]}
-                onPress={handleSubmit}
-                disabled={!text.trim() || isProcessing}
-                activeOpacity={0.85}
-              >
-                {isProcessing ? (
-                  <ActivityIndicator color={theme.colors.accentText} />
-                ) : (
-                  <Text style={styles.submitBtnText}>ORGANIZE WITH BEDROCK ➔</Text>
-                )}
-              </TouchableOpacity>
-            </View>
+            {/* Full-width Submit Button */}
+            <TouchableOpacity
+              style={[styles.submitBtn, (!text.trim() || isProcessing) && styles.submitBtnDisabled]}
+              onPress={handleSubmit}
+              disabled={!text.trim() || isProcessing}
+              activeOpacity={0.85}
+            >
+              {isProcessing ? (
+                <ActivityIndicator color={theme.colors.accentText} />
+              ) : (
+                <Text style={styles.submitBtnText}>ORGANIZE WITH BEDROCK ➔</Text>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </KeyboardAvoidingView>
@@ -253,40 +167,29 @@ const styles = StyleSheet.create({
     color: theme.colors.textMuted,
     fontWeight: "700"
   },
-  voiceGuideBanner: {
+  voiceTip: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(204, 255, 0, 0.08)",
     borderWidth: 1,
-    borderColor: "rgba(204, 255, 0, 0.35)",
+    borderColor: "rgba(204, 255, 0, 0.3)",
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    marginBottom: 12
+    marginBottom: 12,
+    gap: 6
   },
-  voiceGuideIconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "rgba(204, 255, 0, 0.15)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 10
-  },
-  voiceGuideTextBox: {
-    flex: 1
-  },
-  voiceGuideTitle: {
+  voiceTipTag: {
     fontSize: 10,
     fontWeight: "900",
     letterSpacing: 0.8,
-    color: theme.colors.accent,
-    marginBottom: 2
+    color: theme.colors.accent
   },
-  voiceGuideSub: {
+  voiceTipText: {
+    flex: 1,
     fontSize: 11,
     color: theme.colors.textSecondary,
-    lineHeight: 14
+    lineHeight: 15
   },
   textInput: {
     backgroundColor: theme.colors.bg,
@@ -305,7 +208,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexWrap: "wrap",
     gap: 8,
-    marginBottom: 16
+    marginBottom: 18
   },
   chipsLabel: {
     fontSize: 10,
@@ -317,7 +220,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderWidth: 1,
     borderColor: theme.colors.border,
-    paddingVertical: 4,
+    paddingVertical: 5,
     paddingHorizontal: 10,
     borderRadius: 6
   },
@@ -326,28 +229,13 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: theme.colors.textSecondary
   },
-  footerRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12
-  },
-  micFocusBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: theme.colors.bg,
-    borderWidth: 1,
-    borderColor: theme.colors.accent,
-    justifyContent: "center",
-    alignItems: "center"
-  },
   submitBtn: {
-    flex: 1,
     height: 48,
     backgroundColor: theme.colors.accent,
     borderRadius: 24,
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
+    width: "100%"
   },
   submitBtnDisabled: {
     opacity: 0.4

@@ -13,7 +13,6 @@ import { playChime } from "./src/utils/sound.js";
 export default function App() {
   const [tasks, setTasks] = useState([]);
   const [captureVisible, setCaptureVisible] = useState(false);
-  const [initialVoiceMode, setInitialVoiceMode] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeNotification, setActiveNotification] = useState(null);
 
@@ -66,8 +65,7 @@ export default function App() {
     return () => clearInterval(interval);
   }, [tasks]);
 
-  const handleOpenCapture = (isVoice = false) => {
-    setInitialVoiceMode(isVoice);
+  const handleOpenCapture = () => {
     setCaptureVisible(true);
   };
 
@@ -163,7 +161,6 @@ export default function App() {
 
           <CaptureOverlay
             visible={captureVisible}
-            initialVoiceMode={initialVoiceMode}
             onClose={handleCloseCapture}
             onSubmit={handleSubmitThought}
             isProcessing={isProcessing}
